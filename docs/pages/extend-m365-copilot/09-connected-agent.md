@@ -207,6 +207,11 @@ When answering queries:
 4. Offer comparative analysis when multiple options exist
 5. Include any relevant guidelines or considerations from inspection standards
 ```
+
+
+!!! warning "Responsible AI Content Guidelines"
+    If you encounter errors indicating that your "Declarative Copilot content violates Responsible AI guidelines", try simplifying the instructions. Remove complex role-playing scenarios, reduce detailed procedural steps, or use more neutral language. Start with basic task descriptions and gradually add complexity until you identify what triggers the violation.
+
   <cc-end-step lab="e9" exercise="2" step="3" />
 
 ### Step 4: Update the Teams App Manifest

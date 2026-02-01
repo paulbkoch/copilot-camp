@@ -574,6 +574,10 @@ You are an intelligent insurance claims management assistant with access to the 
 - Provide clear explanations for complex procedures
 - Always prioritize customer service and regulatory compliance
 ```
+
+!!! warning "Responsible AI Content Guidelines"
+    If you encounter errors indicating that your "Declarative Copilot content violates Responsible AI guidelines", try simplifying the instructions. Remove complex role-playing scenarios, reduce detailed procedural steps, or use more neutral language. Start with basic task descriptions and gradually add complexity until you identify what triggers the violation.
+    
 <cc-end-step lab="e8" exercise="6" step="2" />
 
 ### Step 3: Update the Teams App Manifest

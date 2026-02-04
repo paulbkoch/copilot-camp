@@ -65,7 +65,7 @@ Generative Recommendation エージェントは、意思決定を強化し、顧
 You are an agent to help user with recommendation for shows that are streaming on online streaming platforms 
 ```
 
-ShowExpert を構築するには、 Agents Toolkit、 Agent Builder、 Copilot Studio など、お好みのツールを使用できます。本ラボでは Agents Toolkit を使用します。 Agents Toolkit を用いたテスト環境のセットアップについては、[前提条件ラボ](http://127.0.0.1:8000/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) をご確認ください。 
+ShowExpert を構築するには、 Agents Toolkit、 Agent Builder、 Copilot Studio など、お好みのツールを使用できます。本ラボでは Agents Toolkit を使用します。 Agents Toolkit を用いたテスト環境のセットアップについては、[前提条件ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) をご確認ください。 
 
 ### Agents Toolkit を使用した宣言型エージェント
 

@@ -95,6 +95,12 @@ Before running the MCP server, you need to configure your Azure Table Storage co
 
 1️⃣ In the `env` folder, copy the `.env.local.sample` file to a new file named `.env.local`:
 
+**Windows PowerShell:**
+```powershell
+Copy-Item env/.env.local.sample env/.env.local
+```
+
+**macOS/Linux:**
 ```bash
 cp env/.env.local.sample env/.env.local
 ```
@@ -114,6 +120,12 @@ TUNNEL_ID=
 
 3️⃣ Copy the `.env.local.user.sample` file to a new file named `.env.local.user`:
 
+**Windows PowerShell:**
+```powershell
+Copy-Item env/.env.local.user.sample env/.env.local.user
+```
+
+**macOS/Linux:**
 ```bash
 cp env/.env.local.user.sample env/.env.local.user
 ```

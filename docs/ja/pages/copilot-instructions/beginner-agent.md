@@ -66,7 +66,7 @@ _knowledge と skills_ について学ぶ必要がある場合は、[ラボ](htt
 You are an agent to help user with recommendation for shows that are streaming on online streaming platforms 
 ```
 
-ShowExpert の構築には Agents Toolkit、Agent Builder、Copilot Studio のいずれも使用できます。本ラボでは Agents Toolkit を使用します。Agents Toolkit を使用した環境構築は [前提条件ラボ](http://127.0.0.1:8000/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) を参照してください。 
+ShowExpert の構築には Agents Toolkit、Agent Builder、Copilot Studio のいずれも使用できます。本ラボでは Agents Toolkit を使用します。Agents Toolkit を使用した環境構築は [前提条件ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) を参照してください。 
 
 ### Agents Toolkit での宣言型エージェント
 

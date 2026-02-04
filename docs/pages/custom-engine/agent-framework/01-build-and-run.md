@@ -299,7 +299,7 @@ Now it's time to run the agent and see it in action!
 
 Let's run the agent using the F5 debug experience.
 
-1️⃣ In Visual Studio Code, press **F5** or select **Run → Start Debugging** from the menu.
+1️⃣ In Visual Studio Code, select the default debug configuration to `(Preview) Debug in Copilot (Edge)`, then press **F5** or select **Run → Start Debugging** from the menu.
 
 2️⃣ When prompted to select a debug target, choose **(Preview) Debug in Copilot (Edge)**.
 

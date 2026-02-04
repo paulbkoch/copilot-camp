@@ -42,3 +42,6 @@ __blobstorage__
 __queuestorage__
 __azurite_db*__.json
 _storage_emulator
+
+# Include .vscode folder (override parent .gitignore)
+!.vscode/

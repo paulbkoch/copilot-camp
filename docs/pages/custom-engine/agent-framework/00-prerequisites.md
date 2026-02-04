@@ -180,9 +180,9 @@ Follow the steps to activate an Azure free account:
 
 <cc-end-step lab="baf0" exercise="3" step="1" />
 
-### Step 2: Create Microsoft Foundry Project and Deploy Model
+### Step 2: Create Microsoft Foundry Project and Deploy Models
 
-For this lab path, you'll need a Microsoft Foundry project with a deployed language model.
+For this lab path, you'll need a Microsoft Foundry project with a couple of models deployed.
 
 1️⃣ Navigate to [Microsoft Foundry](https://ai.azure.com){target=_blank} and sign in with your Azure account.
 2️⃣ Select **+ Create new**, then **Microsoft Foundry resource** and then **Next**.
@@ -200,6 +200,8 @@ For this lab path, you'll need a Microsoft Foundry project with a deployed langu
 
 !!! important "Model Selection"
     Please use **gpt-4.1** for a smooth experience . The labs use knowledge base answer synthesis which is optimized for gpt-4.1. Using other models may lead to unexpected behavior.
+
+7️⃣ Now search for model **text-embedding-ada-002** and select the **text-embedding-ada-002** model, then select **Confirm** and **Deploy**.
 
 !!! tip "Save Your Credentials"
     You'll need the following information from your Microsoft Foundry project:

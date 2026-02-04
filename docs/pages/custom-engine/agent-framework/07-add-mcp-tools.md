@@ -25,14 +25,17 @@ The **Model Context Protocol (MCP)** is an open standard that enables AI applica
     - **ClaimsAdjustersPlugin**: A plugin that consumes MCP tools to list and assign adjusters
     - **Agent Integration**: Wire up the plugin to enable adjuster management in conversations
 
-## Exercise 1: Create the MCP Server with Azure Functions
+## Exercise 1: Setting up the MCP Server
 
-??? important "Pre-defined MCP server"
-    If you don't want to create the MCP server from scratch, you can skip Exercise 1, download a pre-defined one from folder /`src/agent-framework/insurance-mcp`, configure the `env/.env.local` and the `env/.env.local.user` files, and run it pressing F5 in Visual Studio Code. If that is the case, you can move straight to Exercise 2.
+In this exercise you are going to setup a pre-built MCP server that provides claims adjuster management functionality. The server is based on Azure Functions with TypeScript and uses Azure Table Storage to store claims adjuster records.
 
-First, let's create an Azure Function app that serves as your MCP server, exposing claims adjuster management tools.
+### Step 1: Understanding the MCP Server and Prerequisites
 
-### Step 1: Understand the MCP Server Architecture
+The Insurance MCP server is a ready-to-use Azure Functions application that exposes claims adjuster management tools via the Model Context Protocol. It provides the following tools:
+
+- **get_claims_adjusters**: Retrieves a list of all claims adjusters with optional filters by country and area of expertise
+- **get_claims_adjuster**: Retrieves a specific claims adjuster by ID
+- **assign_claim_adjuster**: Assigns a claims adjuster to an insurance claim
 
 ??? note "How MCP Server Works"
     The MCP server exposes tools that can be called by MCP clients. Each tool has:
@@ -50,364 +53,125 @@ The MCP server architecture consists of:
 2. **HTTP Handlers**: REST endpoints for direct API access
 3. **MCP Tool Handlers**: Functions registered as MCP tools for agent consumption
 
+Before starting, make sure you have:
+
+- [Node.js v22 or higher](https://nodejs.org/en){target=_blank}
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local){target=_blank}
+- [Visual Studio Code](https://code.visualstudio.com/){target=_blank}
+- [Dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started){target=_blank}
+- [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite){target=_blank} - Azure Storage emulator (install via `npm install -g azurite`)
+
 <cc-end-step lab="baf7" exercise="1" step="1" />
 
-### Step 2: Create the Azure Function Project
+### Step 2: Downloading and Reviewing the MCP Server
 
-1️⃣ Open a terminal in VSCode and create a new folder for your MCP server under your project:
+For this lab, you will use a pre-built Insurance MCP server. Download the server files [from here](https://download-directory.github.io/?url=https://github.com/microsoft/copilot-camp/tree/main/src/agent-framework/insurance-mcp&filename=insurance-mcp){target=_blank}.
 
-```bash
-mkdir InsuranceMCPServer
-cd InsuranceMCPServer
-```
+1️⃣ Extract the files from the zip to a local folder on your machine.
 
-2️⃣ Initialize a new Azure Functions project with TypeScript:
+2️⃣ Open the extracted folder in Visual Studio Code:
 
 ```bash
-func init --typescript
+cd insurance-mcp
+code .
 ```
 
-3️⃣ Install the required dependencies:
+3️⃣ Review the project structure in Visual Studio Code. The main elements of the project outline are:
 
-```bash
-npm install @azure/data-tables dotenv
-npm install --save-dev @types/node
-```
+- `src/functions`: Folder containing the Azure Functions with MCP tool implementations
+- `data`: Folder with sample claims adjuster data for initialization
+- `env`: Folder for environment configuration files
+- `package.json`: Project dependencies and npm scripts
+- `host.json`: Azure Functions host configuration
 
-4️⃣ Create the environment configuration file `env/.env.local` under your InsuranceMCPServer and fill in your Azure Table Storage details:
-
-```bash
-AZURE_STORAGE_ACCOUNT=your_storage_account
-AZURE_TABLE_ENDPOINT=https://your_storage_account.table.core.windows.net
-TABLE_NAME=ClaimsAdjusters
-ALLOW_INSECURE_CONNECTION=false
-```
-
-5️⃣ Create the environment configuration file `env/.env.local.user` under your InsuranceMCPServer and fill in your Azure Storage account key:
-
-```bash
-SECRET_AZURE_STORAGE_KEY=your_storage_key
-```
+!!! info
+    The MCP server includes pre-configured VS Code tasks that automate the build process, start a dev tunnel, and run the Azure Functions locally. This simplifies the development experience by allowing you to start everything with a single **F5** press.
 
 <cc-end-step lab="baf7" exercise="1" step="2" />
 
-### Step 3: Create the Claims Adjusters Function
+### Step 3: Configuring the Environment
 
-Create a new file `src/functions/ClaimsAdjusters.ts` with the MCP tool implementations:
+Before running the MCP server, you need to configure your Azure Table Storage connection.
 
-```typescript
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
-import * as dotenv from "dotenv";
-import * as path from "path";
-import * as fs from "fs";
+1️⃣ In the `env` folder, copy the `.env.local.sample` file to a new file named `.env.local`:
 
-// Load environment variables (.env.local.user takes precedence over .env.local)
-const envLocalFile = path.join(__dirname, "../../../env/.env.local");
-const envLocalUserFile = path.join(__dirname, "../../../env/.env.local.user");
-
-// Load .env.local first, then .env.local.user (later values override earlier ones)
-dotenv.config({ path: envLocalFile });
-if (fs.existsSync(envLocalUserFile)) {
-    dotenv.config({ path: envLocalUserFile, override: true });
-}
-
-interface ClaimAdjuster {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    country: string;
-    area: string;
-}
-
-// Initialize Table Storage client
-function getTableClient(): TableClient {
-    const account = process.env.AZURE_STORAGE_ACCOUNT;
-    const accountKey = process.env.SECRET_AZURE_STORAGE_KEY;
-    const tableEndpoint = process.env.AZURE_TABLE_ENDPOINT;
-    const tableName = process.env.TABLE_NAME;
-    const allowInsecure = process.env.ALLOW_INSECURE_CONNECTION === "true";
-
-    if (!account || !accountKey || !tableEndpoint || !tableName) {
-        throw new Error("Missing required environment variables. Please check your env/.env file.");
-    }
-
-    const credential = new AzureNamedKeyCredential(account, accountKey);
-    return new TableClient(tableEndpoint, tableName, credential, {
-        allowInsecureConnection: allowInsecure
-    });
-}
-
-// Load claims adjusters data from Table Storage
-async function loadClaimsAdjusters(): Promise<ClaimAdjuster[]> {
-    const tableClient = getTableClient();
-    const adjusters: ClaimAdjuster[] = [];
-
-    const entities = tableClient.listEntities({
-        queryOptions: { filter: `PartitionKey eq 'ClaimsAdjusters'` }
-    });
-
-    for await (const entity of entities) {
-        adjusters.push({
-            id: entity.rowKey as string,
-            firstName: entity.firstName as string,
-            lastName: entity.lastName as string,
-            email: entity.email as string,
-            phone: entity.phone as string,
-            country: entity.country as string,
-            area: entity.area as string
-        });
-    }
-
-    return adjusters;
-}
-
-// Internal implementation: List claims adjusters with optional filters
-async function listClaimsAdjustersImpl(country?: string, area?: string): Promise<ClaimAdjuster[]> {
-    let adjusters = await loadClaimsAdjusters();
-
-    // Apply filters
-    if (country) {
-        adjusters = adjusters.filter(adj => adj.country.toLowerCase() === country.toLowerCase());
-    }
-
-    if (area) {
-        adjusters = adjusters.filter(adj => adj.area.toLowerCase() === area.toLowerCase());
-    }
-
-    return adjusters;
-}
-
-// Internal implementation: Get claim adjuster by ID
-async function getClaimAdjusterByIdImpl(id: string): Promise<ClaimAdjuster | null> {
-    const tableClient = getTableClient();
-    
-    try {
-        const entity = await tableClient.getEntity("ClaimsAdjusters", id);
-        const adjuster: ClaimAdjuster = {
-            id: entity.rowKey as string,
-            firstName: entity.firstName as string,
-            lastName: entity.lastName as string,
-            email: entity.email as string,
-            phone: entity.phone as string,
-            country: entity.country as string,
-            area: entity.area as string
-        };
-        return adjuster;
-    } catch (entityError: any) {
-        if (entityError.statusCode === 404) {
-            return null;
-        }
-        throw entityError;
-    }
-}
-
-// Internal implementation: Assign a claim adjuster to a claim
-async function assignClaimAdjusterImpl(claimId: string, adjusterId: string): Promise<{
-    success: boolean;
-    assignmentId?: string;
-    adjusterName?: string;
-    error?: string;
-}> {
-    if (!claimId || !adjusterId) {
-        return {
-            success: false,
-            error: "Both claimId and adjusterId are required"
-        };
-    }
-
-    // Verify adjuster exists
-    const adjuster = await getClaimAdjusterByIdImpl(adjusterId);
-    
-    if (!adjuster) {
-        return {
-            success: false,
-            error: `Claim adjuster with ID ${adjusterId} not found`
-        };
-    }
-
-    // Generate fake assignment ID
-    const currentYear = new Date().getFullYear();
-    const randomNumber = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    const assignmentId = `ASS-${currentYear}-${randomNumber}`;
-
-    return {
-        success: true,
-        assignmentId: assignmentId,
-        adjusterName: `${adjuster.firstName} ${adjuster.lastName}`
-    };
-}
+```bash
+cp env/.env.local.sample env/.env.local
 ```
+
+2️⃣ Edit the `env/.env.local` file and fill in your Azure Table Storage details:
+
+```bash
+# Azure Table Storage Configuration
+AZURE_STORAGE_ACCOUNT=your_storage_account_name
+AZURE_TABLE_ENDPOINT=https://your_storage_account_name.table.core.windows.net
+TABLE_NAME=ClaimAdjusters
+ALLOW_INSECURE_CONNECTION=false
+
+# DevTunnel Configuration
+TUNNEL_ID=
+```
+
+3️⃣ Copy the `.env.local.user.sample` file to a new file named `.env.local.user`:
+
+```bash
+cp env/.env.local.user.sample env/.env.local.user
+```
+
+4️⃣ Edit the `env/.env.local.user` file and fill in your Azure Storage account key:
+
+```bash
+# Azure Table Storage Configuration
+SECRET_AZURE_STORAGE_KEY=your_storage_account_key
+```
+
+!!! warning "Keep Secrets Secure"
+    The `.env.local.user` file contains sensitive credentials and should never be committed to source control. It is already included in `.gitignore` to prevent accidental commits.
 
 <cc-end-step lab="baf7" exercise="1" step="3" />
 
-### Step 4: Register MCP Tools
+### Step 4: Installing Dependencies and Initializing Data
 
-Add the MCP tool registrations at the end of `src/functions/ClaimsAdjusters.ts`:
+1️⃣ Install the project dependencies by running:
 
-```typescript
-// MCP Tool Handler: List claims adjusters with optional filters
-async function handleListClaimsAdjusters(input: any, context: InvocationContext): Promise<ClaimAdjuster[] | { error: string }> {
-    context.log(`MCP: Listing claims adjusters with filters`);
-
-    try {
-        const country = input.arguments["country"] || undefined;
-        const area = input.arguments["area"] || undefined;
-
-        const adjusters = await listClaimsAdjustersImpl(country, area);
-        return adjusters;
-    } catch (error) {
-        context.log('Error fetching claim adjusters:', error);
-        return { error: (error as Error).message };
-    }
-}
-
-// MCP Tool Handler: Get claim adjuster by ID
-async function handleGetClaimsAdjusterById(input: any, context: InvocationContext): Promise<ClaimAdjuster | { error: string }> {
-    context.log(`MCP: Getting claim adjuster by ID`);
-
-    try {
-        const id = input.arguments["id"];
-
-        if (!id) {
-            return { error: "Claim adjuster ID is required" };
-        }
-
-        const adjuster = await getClaimAdjusterByIdImpl(id);
-
-        if (!adjuster) {
-            return { error: `Claim adjuster with ID ${id} not found` };
-        }
-
-        return adjuster;
-    } catch (error) {
-        context.log('Error fetching claim adjuster:', error);
-        return { error: (error as Error).message };
-    }
-}
-
-// MCP Tool Handler: Assign a claim adjuster to a claim
-async function handleAssignClaimAdjuster(input: any, context: InvocationContext): Promise<{ success: boolean; assignmentId?: string; adjusterName?: string; error?: string }> {
-    context.log(`MCP: Assigning claim adjuster to claim`);
-
-    try {
-        const claimId = input.arguments["claimId"];
-        const adjusterId = input.arguments["adjusterId"];
-
-        const result = await assignClaimAdjusterImpl(claimId, adjusterId);
-        return result;
-    } catch (error) {
-        context.log('Error assigning claim adjuster:', error);
-        return { success: false, error: (error as Error).message };
-    }
-}
-
-// Register MCP tools
-app.mcpTool("get_claims_adjusters", {
-    toolName: "get_claims_adjusters",
-    description: "Retrieve a list of all insurance claims adjusters",
-    toolProperties: [
-        {
-            "propertyName": "country",
-            "propertyType": "string",
-            "description": "The country of the claim adjuster",
-            "isRequired": false
-        },
-        {
-            "propertyName": "area",
-            "propertyType": "string",
-            "description": "The area of expertise of the claim adjuster",
-            "isRequired": false
-        }
-    ],
-    handler: handleListClaimsAdjusters
-});
-
-app.mcpTool("get_claims_adjuster", {
-    toolName: "get_claims_adjuster",
-    description: "Retrieve a specific insurance claims adjuster by ID",
-    toolProperties: [
-        {
-            "propertyName": "id",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim adjuster",
-            "isRequired": true
-        }
-    ],
-    handler: handleGetClaimsAdjusterById
-});
-
-app.mcpTool("assign_claim_adjuster", {
-    toolName: "assign_claim_adjuster",
-    description: "Assign a claim adjuster to an insurance claim",
-    toolProperties: [
-        {
-            "propertyName": "claimId",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim",
-            "isRequired": true
-        },
-        {
-            "propertyName": "adjusterId",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim adjuster to assign",
-            "isRequired": true
-        }
-    ],
-    handler: handleAssignClaimAdjuster
-});
+```bash
+npm install
 ```
 
-??? note "MCP Tool Registration Pattern"
-    Each MCP tool is registered using `app.mcpTool()` with:
-    
-    - **toolName**: The identifier used when calling the tool
-    - **description**: Helps the LLM understand when to use this tool
-    - **toolProperties**: Array of input parameters with name, type, description, and required flag
-    - **handler**: The async function that executes the tool logic
+2️⃣ Initialize the claims adjuster data in Azure Table Storage:
+
+```bash
+npm run init-data
+```
+
+This script creates the `ClaimAdjusters` table in your Azure Storage account and populates it with sample claims adjuster records.
 
 <cc-end-step lab="baf7" exercise="1" step="4" />
 
-### Step 5: Deploy the MCP Server
+### Step 5: Running the MCP Server with Dev Tunnel
 
-1️⃣ Replace the placeholders in below script and run it in your terminal to create the Azure Function App in Azure:
+The project includes pre-configured VS Code tasks that automate starting the dev tunnel and running the Azure Functions locally.
 
-```bash
-az functionapp create --name your-mcp-server --resource-group your-rg --consumption-plan-location eastus --runtime node --runtime-version 20 --functions-version 4 --storage-account your-storage
+1️⃣ If you haven't already installed dev tunnel, follow [these instructions](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started){target=_blank}.
+
+2️⃣ Press **F5** in Visual Studio Code to start the MCP server.
+
+The pre-configured VS Code tasks will automatically:
+
+- Start Azurite (Azure Storage emulator) for local development
+- Build the TypeScript project
+- Create and start the dev tunnel
+- Launch the Azure Functions runtime
+- Install, run, and open the MCP Inspector in your browser for testing and debugging MCP tools
+
+3️⃣ Once the server is running, note the dev tunnel URL displayed in the terminal (e.g., `https://your_devtunnel_id.devtunnels.ms`). Your MCP server endpoint URL will be:
+
+```text
+https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
 ```
 
-2️⃣ Deploy the function:
-
-```bash
-func azure functionapp publish your-mcp-server
-```
-
-3️⃣ Note your MCP server endpoint URL (e.g., `https://your-mcp-server.azurewebsites.net/runtime/webhooks/mcp`)
-
-??? info "MCP server local with devtunnel"
-    Instead of publishing the MCP server to Azure, you can keep it running locally and use **Dev Tunnels** to create a public URL:
-    
-    1️⃣ Start your Azure Function locally:
-    ```bash
-    func start
-    ```
-    
-    2️⃣ In a new terminal, create and host a dev tunnel:
-    ```bash
-    devtunnel create --allow-anonymous
-    devtunnel port create -p 7071
-    devtunnel host
-    ```
-    
-    3️⃣ Copy the tunnel URL (e.g., `https://abc123.devtunnels.ms`) and use it to compose your MCP server endpoint:
-
-    ```text
-    https://abc123.devtunnels.ms/runtime/webhooks/mcp
-    ```
-    
-    This is useful for development and testing without deploying to Azure. The tunnel remains active as long as the `devtunnel host` command is running.
+!!! tip "Keep the Server Running"
+    Keep both the MCP server and dev tunnel running throughout this lab. The tunnel remains active as long as VS Code is running the debug session. If you need to restart, simply press **F5** again.
 
 <cc-end-step lab="baf7" exercise="1" step="5" />
 
@@ -419,12 +183,15 @@ Now let's configure the Custom Engine Agent to connect to your MCP server.
 
 1️⃣ Open your `.env.local` file in the agent project.
 
-2️⃣ Add the MCP server configuration:
+2️⃣ Add the MCP server configuration using your dev tunnel URL from Exercise 1:
 
 ```bash
 # MCP Server Configuration
-MCP_SERVER_URL=https://your-mcp-server.azurewebsites.net/runtime/webhooks/mcp
+MCP_SERVER_URL=https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
 ```
+
+!!! note
+    Replace `your_devtunnel_id` with the actual tunnel ID displayed in the terminal when you started the MCP server in Exercise 1.
 
 <cc-end-step lab="baf7" exercise="2" step="1" />
 
@@ -727,15 +494,18 @@ Now let's test the complete MCP tools integration!
 
 ### Step 1: Run and Verify
 
-1️⃣ Make sure your MCP server is running (locally or deployed to Azure).
+1️⃣ Make sure your MCP server is running with the dev tunnel active. If not, open the MCP server project in VS Code and press **F5** to start it.
 
-2️⃣ Press **F5** in VS Code to start debugging your agent.
+2️⃣ In a separate VS Code window, open your agent project and press **F5** to start debugging your agent.
 
 3️⃣ Select **(Preview) Debug in Copilot (Edge)** if prompted.
 
 4️⃣ The terminal should show normal initialization.
 
 5️⃣ A browser window will open with Microsoft 365 Copilot.
+
+!!! tip "Running Both Projects"
+    You'll need two VS Code windows open simultaneously - one for the MCP server and one for your agent. Make sure both are running before testing.
 
 <cc-end-step lab="baf7" exercise="5" step="1" />
 

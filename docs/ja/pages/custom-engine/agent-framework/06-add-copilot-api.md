@@ -2,44 +2,44 @@
 search:
   exclude: true
 ---
-# ラボ BAF6 - Microsoft 365 Work IQ API 統合を追加する
+# ラボ BAF6 - Microsoft 365 Work IQ API 統合の追加
 
-このラボでは、Zava Insurance エージェントに Microsoft 365 Work IQ API を組み込みます。SharePoint のポリシー ドキュメントを **Copilot Retrieval API** 経由で取得し、Microsoft 365 Copilot のエンタープライズ検索のグラウンディング機能を活用して、保険金請求のコンプライアンスを分析できるようにします。
+このラボでは、Zava Insurance Agent に Microsoft 365 Work IQ API を追加します。 **Copilot Retrieval API** を使用して SharePoint のポリシー ドキュメントを取得し、Microsoft 365 Copilot のエンタープライズ検索によるグラウンディングを活用して、保険請求のコンプライアンス分析を行えるようにします。
 
-???+ info "Microsoft 365 Work IQ API の概要"
-    **Microsoft 365 Work IQ API** を使用すると、エージェントは次のことが可能になります:
+???+ info "Microsoft 365 Work IQ API を理解する"
+    **Microsoft 365 Work IQ API** を使用すると、エージェントは次のことが可能になります。
     
-    - **Copilot Retrieval API**: SharePoint、OneDrive、Copilot コネクタから、権限とコンプライアンス設定を尊重しながら関連するテキスト チャンクを取得
-    - **Secure Data Access**: 信頼境界内で Microsoft 365 データへアクセスし、データの持ち出しを防止
-    - **Enterprise Search Grounding**: Microsoft 365 Copilot と同じ方法で、組織固有情報に基づいて LLM の回答をグラウンディング
-    - **Compliance & Security**: 組み込みの権限モデルで厳格なセキュリティ基準を維持
+    - **Copilot Retrieval API**: SharePoint、OneDrive、Copilot コネクタから、アクセス許可とコンプライアンス設定を尊重しながら関連テキスト チャンクを取得
+    - **Secure Data Access**: 信頼境界内で Microsoft 365 データにアクセスし、データを外部に流出させない
+    - **Enterprise Search Grounding**: Microsoft 365 Copilot と同様に、組織固有の情報に基づいて LLM の応答をグラウンディング
+    - **Compliance & Security**: 組み込みのアクセス許可モデルで厳格なセキュリティ基準を維持
     
-    これにより、SharePoint に保存されたポリシー ドキュメントと照合して保険金請求のコンプライアンスを分析できます。
+    これにより、エージェントは SharePoint に保存されたポリシー ドキュメントに対して保険請求のコンプライアンスを分析できます。
 
 <hr />
 
 ## 概要
 
-ラボ BAF5 では、メール送信とレポート生成の機能を追加しました。今回は Microsoft 365 Work IQ API を用いて SharePoint からポリシー ドキュメントを取得し、AI を活用して保険金請求のコンプライアンスを分析できるようにエージェントを拡張します。
+ラボ BAF5 では、メール送信とレポート生成のコミュニケーション機能を追加しました。今回は Microsoft 365 Work IQ API を使用して SharePoint からポリシー ドキュメントを取得し、AI によるコンプライアンス分析を行う機能を強化します。
 
-**Copilot Retrieval API** は、データを別途複製・インデックス化・チャンク化・保護することなく Retrieval Augmented Generation (RAG) を実現するシンプルなソリューションを提供します。ユーザーのコンテキストと意図を理解し、クエリを変換して最適な結果を返します。
+** Copilot Retrieval API ** は、データを別途インデックス化・チャンク化・セキュリティ確保することなく、Retrieval Augmented Generation (RAG) を実現する効率的なソリューションを提供します。この API はユーザーのコンテキストと意図を理解し、クエリを変換して最も関連性の高い結果を返します。
 
 ???+ warning "ライセンス要件"
-    Copilot Retrieval API は **Microsoft 365 Copilot アドオン ライセンス** を持つユーザーであれば追加費用なしで利用できます。現在、Microsoft 365 Copilot アドオン ライセンスを持たないユーザーはサポートされていません。
+    Copilot Retrieval API は **Microsoft 365 Copilot アドオン ライセンス** を持つユーザーに追加料金なしで提供されます。Microsoft 365 Copilot アドオン ライセンスを持たないユーザーは現在サポートされていません。
 
-## エクササイズ 1: ポリシー ドキュメント用の SharePoint サイトを準備する
+## エクササイズ 1: ポリシー ドキュメントを含む SharePoint サイトをセットアップする
 
-Copilot Retrieval API を使用する前に、ポリシー ドキュメントを格納する SharePoint サイトを作成します。
+Copilot Retrieval API を使用する前に、ポリシー ドキュメントを格納する SharePoint サイトをセットアップします。
 
-### 手順 1: SharePoint サイトを作成する
+### ステップ 1: SharePoint サイトを作成する
 
 ??? note "SharePoint と Copilot Retrieval API について"
-    **Microsoft Graph Copilot Retrieval API** を使用すると、Microsoft 365 Copilot を支える強力なセマンティック検索を使って SharePoint のコンテンツを検索できます。
+    **Microsoft Graph Copilot Retrieval API** を使用すると、Microsoft 365 Copilot の強力なセマンティック検索を利用して SharePoint コンテンツを検索できます。
     
-    - **Semantic Search**: SharePoint ドキュメントを対象に自然言語で検索
-    - **Real-time Access**: 常に最新バージョンのドキュメントを検索
-    - **Security**: SharePoint の権限を尊重 (ユーザー認証が必須)
-    - **Citations**: 出典リンク付きでドキュメント スニペットを返却
+    - **セマンティック検索**: SharePoint ドキュメントに対して自然言語クエリを実行
+    - **リアルタイム アクセス**: 常に最新バージョンのドキュメントを検索
+    - **セキュリティ**: SharePoint アクセス許可を尊重 (ユーザー認証が必要)
+    - **引用**: ソースへのリンク付きドキュメント スニペットを返却
     
     ポリシー条項、補償ガイド、FAQ ドキュメントの検索に最適です。
 
@@ -49,29 +49,29 @@ Copilot Retrieval API を使用する前に、ポリシー ドキュメントを
 
 3️⃣ **Standard team** サイト テンプレートを選択し、**Use template** をクリックします。
 
-4️⃣ サイトを設定します:
+4️⃣ サイトを構成します。
 
 - **Site name**: "Zava Insurance Policy Documents"
 - **Description**: "Insurance policy terms, coverage guides, and FAQs"
 
-5️⃣ **Next** を選択します
+5️⃣ **Next** を選択します。
 
-- **Privacy settings**: Private (メンバーのみアクセス可)
+- **Privacy settings**: Private (メンバーのみアクセス可能)
 - **Select language**: English
 
-6️⃣ **Create site** コマンドを選択し、サイトが作成されるまで待機します。
+6️⃣ **Create site** を選択し、サイトの作成を待ちます。
 
-7️⃣ サイトが準備できたら **Finish** を選択してサイトに移動します。
+7️⃣ サイトが準備できたら **Finish** を選択してサイトを表示します。
 
 <cc-end-step lab="baf6" exercise="1" step="1" />
 
-### 手順 2: ポリシー ドキュメントをアップロードする
+### ステップ 2: ポリシー ドキュメントをアップロードする
 
-次に、プロジェクトのサンプル ポリシー ドキュメントをアップロードします。
+次に、プロジェクト内のサンプル ポリシー ドキュメントをアップロードします。
 
-1️⃣ VS Code ワークスペースで `src/agent-framework/complete/infra/data/sample-documents/` フォルダーを開きます。
+1️⃣ VS Code のワークスペースで `src/agent-framework/complete/infra/data/sample-documents/` に移動します。
 
-2️⃣ 以下のドキュメントがあることを確認します:
+2️⃣ 以下のドキュメントがあることを確認します。
 
    - `Auto Insurance Claims Policies.docx`
    - `Homeowners Insurance Claims Policies.docx`
@@ -82,35 +82,35 @@ Copilot Retrieval API を使用する前に、ポリシー ドキュメントを
 
 4️⃣ **Upload** → **Files** をクリックし、sample-documents フォルダーの 4 つのドキュメントをすべてアップロードします。
 
-5️⃣ SharePoint がドキュメントをインデックス化するまで **10〜15 分** 待ちます。Copilot Retrieval API がドキュメントを検索可能にするための処理時間です。
+5️⃣ SharePoint がドキュメントをインデックス化するまで **10～15 分** 待ちます。Copilot Retrieval API がドキュメントを検索可能にするには時間が必要です。
 
 !!! tip "インデックス化の確認"
-    ドキュメントがインデックス化されたか確認するには:
+    ドキュメントがインデックス化されたかどうかは、以下で確認できます。
     
     - Microsoft 365 Copilot (copilot.microsoft.com) を開く
-    - 「私の SharePoint にはどのようなポリシー ドキュメントがありますか?」と質問する
-    - ドキュメントが表示されれば、エージェントで使用可能です
+    - 「私の SharePoint にあるポリシー ドキュメントは？」と尋ねる
+    - ドキュメントが表示されれば、エージェントで使用する準備ができています
 
-6️⃣ SharePoint サイトの URL をコピーします。後ほどテストで使用します。
+6️⃣ 後でテストするために SharePoint サイトの URL をコピーしておきます。
 
 <cc-end-step lab="baf6" exercise="1" step="2" />
 
 ## エクササイズ 2: LanguageModelService を作成する
 
-ClaimsPoliciesPlugin を作成する前に、AI でコンプライアンス分析を行うための LanguageModelService を実装します。
+ClaimsPoliciesPlugin を作成する前に、AI によるコンプライアンス分析を行うため、言語モデルと連携するサービスを作成します。
 
-### 手順 1: LanguageModelService を作成する
+### ステップ 1: LanguageModelService を作成する
 
-??? note "このサービスが行うこと"
-    `LanguageModelService` は言語モデル機能への集中アクセスポイントです:
+??? note "このサービスの役割"
+    `LanguageModelService` は言語モデル機能への集中アクセスポイントを提供します。
     
-    - **Chat Completions**: プロンプトを言語モデルに送り、レスポンスを取得
-    - **Configurable Model**: 設定で指定したモデル デプロイメントを使用
+    - **Chat Completions**: プロンプトを送信して応答を取得
+    - **Configurable Model**: 設定で指定した言語モデル デプロイメントを使用
     - **Shared Endpoint**: 他の AI サービスと同じ Azure OpenAI エンドポイントを使用
     
-    このサービスは ClaimsPoliciesPlugin が取得したポリシー ドキュメントと保険金請求を照合し、コンプライアンスを分析する際に使用します。
+    このサービスは、ClaimsPoliciesPlugin が取得したポリシー ドキュメントに対するコンプライアンス分析を行う際に使用されます。
 
-1️⃣ `src/Services/LanguageModelService.cs` に新しいファイルを作成し、次の実装を追加します:
+1️⃣ `src/Services/LanguageModelService.cs` という新しいファイルを作成し、次の実装を追加します。
 
 ```csharp
 using Azure;
@@ -190,13 +190,13 @@ public class LanguageModelService
 
 <cc-end-step lab="baf6" exercise="2" step="1" />
 
-### 手順 2: 依存関係注入に LanguageModelService を登録する
+### ステップ 2: Dependency Injection に LanguageModelService を登録する
 
 アプリケーションの DI コンテナーにサービスを登録します。
 
 1️⃣ `src/Program.cs` を開きます。
 
-2️⃣ 他のサービスを登録している箇所 (例: `builder.Services.AddScoped<VisionService>();`) を見つけ、その直後に以下を追加します:
+2️⃣ 他のサービスが登録されている場所 ( `builder.Services.AddScoped<VisionService>();` など) を探し、その直後に次を追加します。
 
 ```csharp
 // Register LanguageModelService for AI-powered analysis
@@ -205,39 +205,39 @@ builder.Services.AddSingleton<LanguageModelService>();
 
 <cc-end-step lab="baf6" exercise="2" step="2" />
 
-### 手順 3: 設定を更新する
+### ステップ 3: 設定を更新する
 
-言語モデルの設定が含まれていることを確認します。
+言語モデルの設定が構成に含まれていることを確認します。
 
 1️⃣ `.env.local` ファイルを開きます。
 
-2️⃣ 次の言語モデル設定があるか確認し、無ければ追加します:
+2️⃣ 次の言語モデル設定があるか確認し、ない場合は追加します。
 
 ```bash
 # Language Model (for compliance analysis)
-LANGUAGE_MODEL_NAME=gpt-4o
+LANGUAGE_MODEL_NAME=gpt-4.1
 ```
 
-??? note "設定に関する補足"
-    - **LANGUAGE_MODEL_NAME**: Azure OpenAI での言語モデルのデプロイ名
-    - サービスは他の AI モデルと同じエンドポイントと API キーを使用します
-    - コスト重視の場合は `gpt-4o-mini`、高度な推論が必要な場合は `gpt-4o` を利用できます
+??? note "設定のポイント"
+    - **LANGUAGE_MODEL_NAME**: Azure OpenAI でデプロイした言語モデルのデプロイ名
+    - 他の AI モデルと同じエンドポイントと API キーを使用します
+    - コストを抑えるには `gpt-4o-mini` を使用し、より高度な推論には `gpt-4.1` を使用できます
 
 <cc-end-step lab="baf6" exercise="2" step="3" />
 
 ## エクササイズ 3: ClaimsPoliciesPlugin を作成する
 
-Copilot Retrieval API を使用して、SharePoint のポリシー ドキュメントと照合し保険金請求のコンプライアンスを分析する ClaimsPoliciesPlugin を作成します。
+次に、SharePoint のポリシー ドキュメントを取得し、コンプライアンス分析を行う `ClaimsPoliciesPlugin` を作成します。
 
-### 手順 1: Copilot Retrieval API を理解する
+### ステップ 1: Copilot Retrieval API を理解する
 
 ??? note "Copilot Retrieval API の仕組み"
-    **Microsoft 365 Copilot Retrieval API** では次のことが可能です:
+    **Microsoft 365 Copilot Retrieval API** では、次のことが可能です。
     
-    - **Query SharePoint content**: 自然言語クエリで SharePoint ドキュメントから関連テキストを取得
-    - **Respect permissions**: ユーザーのアクセス権に基づいて結果をフィルタリング
-    - **Get structured responses**: タイトルや著者などのメタデータ付きテキスト抽出結果を受信
-    - **Use KQL filters**: URL、日付範囲、ファイル タイプなどでフィルタリング可能
+    - **SharePoint コンテンツの検索**: 自然言語クエリで SharePoint ドキュメントから関連テキスト チャンクを取得
+    - **アクセス許可の尊重**: 結果はユーザーのアクセス権に基づいてフィルター
+    - **構造化レスポンス**: タイトルや作成者などのメタデータ付きテキストを受領
+    - **KQL フィルター**: URL、日付範囲、ファイル タイプなどでフィルター可能
     
     **API エンドポイント**: `POST https://graph.microsoft.com/v1.0/copilot/retrieval`
     
@@ -252,30 +252,30 @@ Copilot Retrieval API を使用して、SharePoint のポリシー ドキュメ�
     ```
     
     **ベスト プラクティス**:
-
-    - クエリには可能な限り多くのコンテキストを含める
+    
+    - クエリにはできるだけ多くのコンテキストを含める
     - `queryString` は 1 文にまとめる
-    - 幅広い内容に当てはまる一般的すぎるクエリは避ける
-    - 返されたすべての抽出テキストを LLM へ渡して回答を生成する
+    - 幅広いコンテンツに当てはまる一般的なクエリは避ける
+    - 取得したすべての抽出結果を LLM に渡して回答を生成する
 
 <cc-end-step lab="baf6" exercise="3" step="1" />
 
-### 手順 2: ClaimsPoliciesPlugin を作成する
+### ステップ 2: ClaimsPoliciesPlugin を作成する
 
-??? note "このプラグインが行うこと"
-    `ClaimsPoliciesPlugin` は保険金請求のコンプライアンス分析機能を提供します。
+??? note "このプラグインの役割"
+    `ClaimsPoliciesPlugin` は保険請求のコンプライアンス分析機能を提供します。
     
-    **AnalyzeClaimCompliance**:
-
+    **AnalyzeClaimCompliance**
+    
     - KnowledgeBaseService から請求詳細を取得
-    - Copilot Retrieval API で SharePoint のポリシー ドキュメントを検索
-    - AI を使って請求内容とポリシーを照合しコンプライアンスを分析
-    - 出典付きの構造化された分析結果を返却
-    - ストリーミング レスポンスに SharePoint ドキュメントの引用を追加
+    - Copilot Retrieval API を使用して SharePoint のポリシー ドキュメントを検索
+    - AI を使用して取得したポリシーと請求内容を照合し、コンプライアンスを分析
+    - 引用付きの構造化された分析結果を返す
+    - ストリーミング応答に SharePoint ドキュメントの引用を追加
     
-    プラグインは **On-Behalf-Of (OBO) トークン** を使用して Microsoft Graph を呼び出し、ユーザー権限を尊重します。
+    プラグインは **On-Behalf-Of (OBO) トークン** を使用して Microsoft Graph を呼び出し、ユーザーのアクセス許可を尊重します。
 
-1️⃣ `src/Plugins/ClaimsPoliciesPlugin.cs` に次の実装を持つ新しいファイルを作成します:
+1️⃣ `src/Plugins/ClaimsPoliciesPlugin.cs` という新しいファイルを作成し、次の実装を追加します。
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -556,43 +556,41 @@ namespace ZavaInsurance.Plugins
 ```
 
 ???+ info "StreamingResponse での引用の仕組み"
-    `ClaimsPoliciesPlugin` は `ITurnContext` 上の `StreamingResponse.AddCitation()` メソッドを使用して引用をレスポンスに追加します。手順は以下のとおりです:
+    `ClaimsPoliciesPlugin` は `ITurnContext` の `StreamingResponse.AddCitation()` メソッドを使用して応答に引用を追加します。仕組みは以下のとおりです。
     
-    1. **AI が引用参照を生成**: 言語モデルが分析テキスト内に `[1]`, `[2]` などの参照と `CitationsTitles`, `CitationsLinks` 配列を返します。
-    
-    2. **ClientCitation オブジェクトを作成**: 各引用について `ClientCitation` を作成します:
+    1. **AI が引用を生成**: 言語モデルが分析テキスト内に `[1]`、`[2]` のような参照を挿入し、`CitationsTitles` と `CitationsLinks` の配列を返します。
+    2. **ClientCitation オブジェクトを作成**: 各引用について以下を指定して `ClientCitation` を作成します。
         - `position`: 引用番号 (1 から始まり、テキスト内の `[1]`, `[2]` と一致)
-        - `title`: 表示用タイトル
-        - `citationLink`: ソース ドキュメントへの URL (ボットのプロキシ エンドポイント経由)
-        - `imageName`: アイコン (例: `ClientCitationsIconNameEnum.MicrosoftWord`)
+        - `title`: 引用の表示タイトル
+        - `citationLink`: 実際のドキュメントへリダイレクトするボットの `/api/citation` プロキシ エンドポイント経由の URL
+        - `imageName`: 表示アイコン (例: `ClientCitationsIconNameEnum.MicrosoftWord`)
+    3. **StreamingResponse に追加**: `_turnContext.StreamingResponse.AddCitation(citation)` を呼び出して引用をキューに追加
+    4. **M365 Copilot が引用を表示**: Microsoft 365 Copilot がクリック可能な引用リンクを自動でレンダリング
     
-    3. **StreamingResponse に追加**: `_turnContext.StreamingResponse.AddCitation(citation)` を呼び出して引用をキューに追加します。
-    
-    4. **M365 Copilot が引用を表示**: Microsoft 365 Copilot がクリック可能な引用リンクを自動でレンダリングします。
-    
-    **プロキシ エンドポイントを使う理由**: SharePoint の URL は認証が必要なため、`GetCitationUrl()` でボットの `/api/citation` エンドポイントを経由させ、認証後に実際のドキュメントへリダイレクトします。
+    **なぜプロキシ エンドポイントを使うのか?**  
+    SharePoint の URL には認証が必要です。`GetCitationUrl()` メソッドはリンクをボットの `/api/citation` エンドポイント経由でルーティングし、認証処理後に実際のドキュメントへリダイレクトします。
 
 <cc-end-step lab="baf6" exercise="3" step="2" />
 
-## エクササイズ 4: ClaimsPoliciesPlugin をエージェントに登録する
+## エクササイズ 4: Agent で ClaimsPoliciesPlugin を登録する
 
-ZavaInsuranceAgent に ClaimsPoliciesPlugin を組み込みます。
+次に、ZavaInsuranceAgent に ClaimsPoliciesPlugin を組み込みます。
 
-### 手順 1: ClaimsPoliciesPlugin をインスタンス化する
+### ステップ 1: ClaimsPoliciesPlugin をインスタンス化する
 
 1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ `GetClientAgent` メソッド (約 169 行目) を探します。
+2️⃣ `GetClientAgent` メソッド (およそ 169 行目) を探します。
 
-3️⃣ サービス インスタンスを取得している箇所で、`var visionService = scope.ServiceProvider.GetRequiredService<VisionService>();` の直後に次を追加します:
+3️⃣ サービス インスタンスを取得している箇所を見つけ、`var visionService = scope.ServiceProvider.GetRequiredService<VisionService>();` の直後に次を追加します。
 
 ```csharp
 var languageModelService = scope.ServiceProvider.GetRequiredService<LanguageModelService>();
 ```
 
-4️⃣ プラグインをインスタンス化している場所 (`CommunicationPlugin communicationPlugin = ...` の後) を探します。
+4️⃣ プラグインをインスタンス化しているセクション ( `CommunicationPlugin communicationPlugin = ...` の後) を探します。
 
-5️⃣ ClaimsPoliciesPlugin のインスタンス化を追加します:
+5️⃣ ClaimsPoliciesPlugin のインスタンス化を追加します。
 
 ```csharp
 // Create ClaimsPoliciesPlugin with required dependencies
@@ -601,11 +599,11 @@ ClaimsPoliciesPlugin claimsPoliciesPlugin = new(context, turnState, knowledgeBas
 
 <cc-end-step lab="baf6" exercise="4" step="1" />
 
-### 手順 2: ClaimsPoliciesPlugin のツールを登録する
+### ステップ 2: ClaimsPoliciesPlugin のツールを登録する
 
-同じ `GetClientAgent` メソッドで、`toolOptions.Tools` にツールを追加している箇所までスクロールします。
+同じ `GetClientAgent` メソッドで、`toolOptions.Tools` にツールを追加している箇所を探します。
 
-Communication ツール セクションを見つけ、その直後に ClaimsPoliciesPlugin ツールを追加します:
+Communication ツールのセクションを見つけ、その直後に ClaimsPoliciesPlugin のツールを追加します。
 
 ```csharp
 // Register ClaimsPolicies tools (Copilot Retrieval API)
@@ -613,23 +611,23 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(claimsPoliciesPlugin.AnalyzeClaim
 ```
 
 ??? note "ツール登録パターン"
-    エージェントは **AIFunctionFactory** を使用してプラグイン メソッドを AI ツールとして登録します。プラグイン メソッドの `[Description]` 属性がツールの説明となり、LLM が呼び出し判断を行います。
+    エージェントは **AIFunctionFactory** を使用してプラグイン メソッドを AI ツールとして登録します。プラグイン メソッドに付与された `[Description]` 属性がツールの説明となり、LLM が呼び出しを判断する材料になります。
 
 <cc-end-step lab="baf6" exercise="4" step="2" />
 
-### 手順 3: エージェントの命令文を更新する
+### ステップ 3: Agent のインストラクションを更新する
 
-コンプライアンス分析ツールを命令文に追加します。
+エージェント インストラクションにコンプライアンス分析ツールを追加します。
 
-1️⃣ `src/Agent/ZavaInsuranceAgent.cs` で `AgentInstructions` フィールドを探します。
+1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開き、`AgentInstructions` フィールドを探します。
 
-2️⃣ 既存のツール一覧を見つけ、次を追加します:
+2️⃣ 既存のツール一覧を見つけ、次を追加します。
 
 ```csharp
 For claims compliance analysis, use {{ClaimsPoliciesPlugin.AnalyzeClaimCompliance}}.
 ```
 
-`AgentInstructions` 全体は以下のようにすべてのツールを含む必要があります:
+`AgentInstructions` 全体は次のようになっているはずです。
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -659,23 +657,23 @@ Be concise and professional in your responses.
 
 <cc-end-step lab="baf6" exercise="4" step="3" />
 
-### 手順 4: ウェルカム メッセージを更新する
+### ステップ 4: ウェルカム メッセージを更新する
 
-StartConversationPlugin にコンプライアンス分析を提案フローとして追加します。
+StartConversationPlugin を更新し、コンプライアンス分析を推奨ワークフローに追加します。
 
 1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。
 
 2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を探します。
 
-3️⃣ ワークフロー一覧で "Analyze this damage photo" の後に次を追加します:
+3️⃣ ワークフロー リストにコンプライアンス チェックのプロンプトを追加します。「Analyze this damage photo」の後に次を追加します。
 
 ```csharp
 "8. \"Check compliance for this claim\"\n" +
 ```
 
-4️⃣ 以降の手順番号を更新します (Generate investigation report → 9、Update claim status → 10)。
+4️⃣ 残りの手順の番号を更新します (Generate investigation report → 9、Update claim status → 10)。
 
-更新後のワークフロー セクションは次のようになります:
+更新後のワークフロー セクションは次のようになります。
 
 ```csharp
 "🎯 Try this complete investigation workflow:\n" +
@@ -695,9 +693,9 @@ StartConversationPlugin にコンプライアンス分析を提案フローと�
 
 ## エクササイズ 5: Copilot API 統合をテストする
 
-統合が完了したら、実際に動作を確認します。
+それでは、Copilot API 統合をテストしましょう！
 
-### 手順 1: 実行して確認する
+### ステップ 1: 実行と確認
 
 1️⃣ VS Code で **F5** を押してデバッグを開始します。
 
@@ -705,27 +703,27 @@ StartConversationPlugin にコンプライアンス分析を提案フローと�
 
 3️⃣ ターミナルに通常の初期化メッセージが表示されます。
 
-4️⃣ ブラウザーで Microsoft 365 Copilot が開きます。
+4️⃣ ブラウザー ウィンドウが開き、Microsoft 365 Copilot が表示されます。
 
 <cc-end-step lab="baf6" exercise="5" step="1" />
 
-### 手順 2: 保険金請求のコンプライアンス分析をテストする
+### ステップ 2: 保険請求コンプライアンス分析をテストする
 
-1️⃣ Microsoft 365 Copilot で次を入力します:
+1️⃣ Microsoft 365 Copilot で次を入力します。
 
 ```text
 Check compliance for claim CLM-2025-001007
 ```
 
-エージェントは以下を行うはずです:
+エージェントは次を実行するはずです。
 
 - `ClaimsPoliciesPlugin.AnalyzeClaimCompliance` を使用
 - Table Storage から請求詳細を取得
-- Copilot Retrieval API で SharePoint からポリシーを取得
+- Copilot Retrieval API を呼び出して SharePoint からポリシーを取得
 - AI でコンプライアンスを分析
-- 出典付きの構造化レポートを返却
+- 引用付きの構造化されたレポートを返却
 
-**期待される応答**:
+**期待される応答:**
 
 ```
 Retrieving policies for claim CLM-2025-001007...
@@ -752,25 +750,25 @@ The claim is currently open and has a high severity rating due to a multi-vehicl
 - ...
 ```
 
-2️⃣ レスポンス内の **引用** (例: `[1]`, `[2]`) に注目してください。これらは分析に使用された SharePoint のポリシー ドキュメントへリンクしています。
+2️⃣ 応答内の **引用** ( `[1]`, `[2]` など) に注目してください。これらは分析に使用された SharePoint ポリシー ドキュメントへリンクしています。
 
 <cc-end-step lab="baf6" exercise="5" step="2" />
 
-### 手順 3: 別の請求でテストする
+### ステップ 3: 別の請求でテストする
 
-1️⃣ 別の請求で次のプロンプトを試します:
+1️⃣ 別の請求について次のプロンプトを試してみます。
 
 ```text
 Check if claim CLM-2025-001001 follows our policies
 ```
 
-2️⃣ エージェントは請求の種別 (Auto、Homeowners など) と地域に基づき、適切なポリシーを取得して分析します。
+2️⃣ エージェントは Copilot Retrieval API を使用して、請求タイプ (Auto、Homeowners など) と地域に基づき適切なポリシーを取得するはずです。
 
 <cc-end-step lab="baf6" exercise="5" step="3" />
 
-### 手順 4: コンプライアンスを含む完全なワークフローをテストする
+### ステップ 4: コンプライアンスを含むワークフロー全体をテストする
 
-次のプロンプトでワークフロー全体をテストします:
+コンプライアンス分析を含むワークフロー全体をテストします。
 
 ```text
 1. Get details for claim CLM-2025-001007
@@ -781,39 +779,41 @@ Check if claim CLM-2025-001001 follows our policies
 6. Send the report by email
 ```
 
-エージェントは Copilot Retrieval API を含むすべての機能をシームレスに統合して実行するはずです。
+エージェントは他のすべての機能と合わせて Copilot Retrieval API をシームレスに統合して動作するはずです！
 
 <cc-end-step lab="baf6" exercise="5" step="4" />
 
 ---8<--- "ja/b-congratulations.md"
 
-Microsoft 365 Work IQ API 統合を追加するラボ BAF6 を完了しました!
+👏 ラボ BAF6 - Microsoft 365 Work IQ API 統合を完了しました！
 
-このラボで学んだこと:
+習得した内容:
 
-- ✅ Copilot Retrieval API 用にポリシー ドキュメントを格納する SharePoint サイトを構築
-- ✅ AI 処理用に集中管理された LanguageModelService を作成
-- ✅ Microsoft 365 Copilot Retrieval API とその機能を理解
-- ✅ Copilot Retrieval API を利用する ClaimsPoliciesPlugin を作成
-- ✅ Microsoft Graph 経由で SharePoint ポリシー ドキュメント検索を統合
+- ✅ Copilot Retrieval API 用にポリシー ドキュメントを含む SharePoint サイトをセットアップ
+- ✅ AI 操作用の集中管理サービス LanguageModelService を作成
+- ✅ Microsoft 365 Copilot Retrieval API の機能を理解
+- ✅ Copilot Retrieval API を使用する ClaimsPoliciesPlugin を作成
+- ✅ Microsoft Graph を通じた SharePoint ポリシー ドキュメント検索を統合
 - ✅ 取得したポリシー ドキュメントを用いた AI 分析を実装
-- ✅ SharePoint ドキュメントの引用をエージェント回答に追加
+- ✅ SharePoint ドキュメントからの引用をエージェント応答に追加
 
-あなたの Zava Insurance エージェントには、次の機能が含まれました:
+現在の Zava Insurance Agent の機能:
 
-- **Search**: Azure AI Search による請求とポリシーの検索
-- **Analysis**: Mistral を用いた AI ビジョンでの損害評価
-- **Compliance**: SharePoint のポリシーを用いた Copilot Retrieval API によるコンプライアンス分析
+- **Search**: Azure AI Search による請求・ポリシー検索
+- **Analysis**: Mistral を用いた AI ビジョンによる損害評価
+- **Compliance**: SharePoint のポリシー コンプライアンス分析用  Copilot Retrieval API
 - **Communication**: メール レポートと調査サマリー
 
 ???+ info "Microsoft 365 Work IQ API について"
-    Microsoft 365 Work IQ API は、Copilot の体験を支えるコンポーネントへのアクセスを提供します:
+    Microsoft 365 Work IQ API は、Copilot エクスペリエンスを支えるコンポーネントへのアクセスを提供します。
     
-    - **Retrieval API**: Microsoft 365 データを持ち出さずに AI ソリューションをグラウンディング
-    - **Chat API** (プレビュー): エンタープライズ検索のグラウンディング付きでマルチターン会話を実現
+    - **Retrieval API**: データを外部に出さずに Microsoft 365 データで AI をグラウンディング
+    - **Chat API** (プレビュー): エンタープライズ検索を組み込んだマルチターン会話を実現
     
-    これらの API は、データをその場に保持し、権限を尊重することで厳格なセキュリティとコンプライアンスを維持します。
+    これらの API は、データをその場に保持し、アクセス許可を尊重することで厳格なセキュリティとコンプライアンスを維持します。
 
-🎉 **おめでとうございます!** Microsoft 365 Copilot API を統合した本番レベルの AI エージェントが完成しました! 🎊
+🎉 **おめでとうございます！** Microsoft 365 Copilot API を統合した本番運用レベルの AI エージェントを構築できました 🎊
+
+<cc-next url="../07-add-mcp-tools" />
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/custom-engine/agent-framework/06-add-copilot-api--ja" />

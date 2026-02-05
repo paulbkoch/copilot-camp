@@ -4,74 +4,74 @@ search:
 ---
 # ラボ BAF2 - Azure AI Search を使用したドキュメント検索の追加
 
-このラボでは、Azure AI Search を用いて文書検索機能を追加し、Zava Insurance Agent を強化します。保険金請求を検索し、請求の詳細を取得し、書類が不足している請求を識別するための AI 搭載検索を行う **ClaimsPlugin** を作成します。
+このラボでは、Azure AI Search を使用してドキュメント検索機能を追加し、Zava Insurance エージェントを強化します。AI を活用した検索で保険請求書を検索し、請求内容を取得し、書類が不足している請求を特定する `ClaimsPlugin` を作成します。
 
-???+ info "Azure AI Search の基本概念"
-    **Azure AI Search** は、コンテンツに対して高度な検索体験を構築するためのインフラストラクチャ、API、およびツールを提供するクラウド検索サービスです。
+???+ info "Azure AI Search の概念を理解する"
+    **Azure AI Search** は、コンテンツに対して高度な検索エクスペリエンスを構築するためのインフラストラクチャ、API、ツールを提供するクラウド検索サービスです。
     
     **主要概念:**
     
-    - **Search Index**: 検索可能なドキュメントのコレクションで、データベース テーブルに似ています。各インデックスには、検索・フィルター・並べ替えが可能なフィールドを持つドキュメントが含まれます。
-    - **Knowledge Source**: データをインデックスに接続する論理的なグループ。データの取得元とインデックス化方法を定義します。
-    - **Knowledge Base**: 複数の Knowledge Source をまとめ、単一のクエリで異なるデータソースを横断的に検索できる統合インターフェース。
+    - **検索インデックス**: データベース テーブルに似た、検索可能なドキュメントのコレクション。各インデックスには、検索・フィルター・ソート可能なフィールドを持つドキュメントが含まれます。
+    - **ナレッジソース**: データをインデックスに接続する論理的なグループ。データの取得元とインデックス方法を定義します。
+    - **ナレッジベース**: 複数のナレッジソースをまとめ、単一のクエリで複数データソースを横断検索できる統合インターフェイスです。
     
-    このラボでは、保険請求データを格納する **claims index** を作成し、データを接続する **knowledge source** を構成し、統合検索用に **knowledge base** をセットアップします。ClaimsPlugin はこれらのコンポーネントを利用して AI 搭載検索を実行します。
+    このラボでは、保険請求データを格納する **claims インデックス** を作成し、データと接続する **ナレッジソース** を設定し、統合検索用の **ナレッジベース** を構築します。`ClaimsPlugin` はこれらのコンポーネントを使って AI 検索を行います。
 
 ## Exercise 1: Azure AI Search のセットアップ
 
 プラグインを追加する前に、サンプルの請求データで Azure AI Search をセットアップします。
 
-### 手順 1: Azure AI Search サービスの作成
+### Step 1: Azure AI Search サービスの作成
 
-まだ Azure AI Search サービス（Lab BAF0 で作成済み）を作成していない場合は、今作成します。
+まだ Azure AI Search サービスを作成していない場合（ラボ BAF0 から）、ここで作成します。
 
 1️⃣ [Azure Portal](https://portal.azure.com){target=_blank} にアクセスします。
 
 2️⃣ **+ Create a resource** → **Azure AI Search** を検索 → **Create** をクリックします。
 
-3️⃣ 以下を設定します:
+3️⃣ 以下を構成します:
 
-- **Resource Group**: Microsoft Foundry プロジェクトと同じリソースグループ
+- **Resource Group**: Microsoft Foundry プロジェクトと同じものを使用
 - **Service Name**: 一意の名前（例: `zava-insurance-search`）
-- **Region**: 任意のサポート対象リージョン (Central US, East US, West Europe など)
+- **Region**: 任意の対応リージョン (Central US, East US, West Europe など)
 - **Pricing Tier**: Basic
 
-4️⃣ **Review + Create** → **Create** をクリックします（2-3 分）。
+4️⃣ **Review + Create** → **Create** をクリック（2〜3 分かかります）。
 
-5️⃣ デプロイ完了後、リソースの **Overview** ページで **URL** をコピーします。
+5️⃣ デプロイ完了後、リソースの **Overview** ページに移動し、**URL** をコピーします。
 
 6️⃣ **Settings** > **Keys** に移動し、**Primary Admin Key** をコピーします。
 
 <cc-end-step lab="baf2" exercise="1" step="1" />
 
-### 手順 2: サンプル請求データの追加
+### Step 2: サンプル請求データの追加
 
-プロジェクトにはサンプル請求データが含まれており、自動的にインデックス化されます。
+プロジェクトには、インデックス化されるサンプル請求データが含まれています。
 
 1️⃣ VS Code で `infra/data/sample-data/claims.json` を開きます。
 
-2️⃣ 構造を確認します。各請求には以下があります:
+2️⃣ 構造を確認します。各請求は以下を持ちます:
 
 - `claimNumber`: 一意の識別子 (例: "CLM-2025-001001")
 - `policyholderName`: 顧客名
 - `claimType`: Auto, Homeowners, Commercial
 - `status`: Open, In Progress, Approved, Closed
 - `severity`: Low, Medium, High, Critical
-- `estimatedCost`: 請求金額
+- `estimatedCost`: 請求額
 - `fraudRiskScore`: リスク指標 (0-100)
 - `region`: Northeast, South, Midwest, West
 
-3️⃣ このデータはエージェントを実行すると Azure AI Search にインデックス化されます。
+3️⃣ このデータはエージェント実行時に Azure AI Search へインデックス化されます。
 
 <cc-end-step lab="baf2" exercise="1" step="2" />
 
-### 手順 3: Azure AI Search 資格情報の設定
+### Step 3: Azure AI Search 資格情報の設定
 
 Azure AI Search の資格情報をプロジェクトに追加します。
 
 1️⃣ VS Code で `env/.env.local` を開きます。
 
-2️⃣ Azure AI Search セクションを探し、以下を更新します:
+2️⃣ Azure AI Search セクションを見つけ、以下を更新します:
 
 ```bash
 # Azure AI Search
@@ -80,7 +80,7 @@ AZURE_AI_SEARCH_ENDPOINT=https://your-search.search.windows.net
 
 3️⃣ VS Code で `env/.env.local.user` を開きます。
 
-4️⃣ Azure AI Search セクションを探し、以下を更新します:
+4️⃣ Azure AI Search セクションを見つけ、以下を更新します:
 
 ```bash
 # Azure AI Search
@@ -88,32 +88,32 @@ SECRET_AZURE_AI_SEARCH_API_KEY=your-primary-admin-key
 ```
 
 !!! tip "資格情報の確認方法"
-    - **Endpoint**: Azure Portal → 対象 Search Service → Overview → URL
-    - **API Key**: Azure Portal → 対象 Search Service → Keys → Primary Admin Key
+    - **Endpoint**: Azure Portal → 対象の Search Service → Overview → URL
+    - **API Key**: Azure Portal → 対象の Search Service → Keys → Primary Admin Key
 
 <cc-end-step lab="baf2" exercise="1" step="3" />
 
 ## Exercise 2: KnowledgeBaseService の作成
 
-KnowledgeBaseService は Azure AI Search とのすべてのやり取りを担当し、インデックス・Knowledge Source・Knowledge Base の作成、データのインデックス化、AI 搭載の検索を行います。
+`KnowledgeBaseService` は Azure AI Search とのすべてのやり取りを担当し、インデックス・ナレッジソース・ナレッジベースの作成、データのインデックス化、AI 検索を行います。
 
-### 手順 1: 完全版 KnowledgeBaseService の作成
+### Step 1: 完全な KnowledgeBaseService の作成
 
 ??? note "このコードが行うこと"
-    `KnowledgeBaseService` は Azure AI Search 連携の中核サービスです:
+    `KnowledgeBaseService` は Azure AI Search 連携の中心サービスです:
     
-    - **Constructor**: 設定を使用して Azure AI Search と Azure OpenAI への接続を初期化
-    - **EnsureClaimsIndexAsync**: Semantic とベクトル検索を備えた検索インデックスを作成（Knowledge Base に必須）
-    - **CreateKnowledgeSourcesAsync**: データフィールドを定義する Knowledge Source を設定
-    - **CreateKnowledgeBaseAsync**: 回答生成用 LLM モデルを使用する Knowledge Base を作成
-    - **RetrieveAsync**: 主要なエージェントリトリーバルメソッド—LLM を使い検索し、フォーマット指示付きで回答を生成
+    - **Constructor**: 設定を用いて Azure AI Search と Azure OpenAI への接続を初期化
+    - **EnsureClaimsIndexAsync**: ナレッジベースに必要なセマンティック & ベクター検索付きの検索インデックスを作成
+    - **CreateKnowledgeSourcesAsync**: インデックス化するデータフィールドを定義するナレッジソースを作成
+    - **CreateKnowledgeBaseAsync**: 回答合成用の LLM モデルを指定してナレッジベースを作成
+    - **RetrieveAsync**: エージェント的検索メソッド。LLM を使って検索し、フォーマット指定付きで回答を合成
     - **IndexClaimsDataAsync**: JSON ファイルからサンプル請求データを読み込みインデックス化
     
-    このサービスは、エージェントリトリーバル機能を備えた完全な Azure AI Search 機能を提供します。
+    このサービスが、エージェント的検索機能を備えた Azure AI Search の完全機能を提供します。
 
 1️⃣ VS Code で新しいフォルダー `src/Services` を作成します。
 
-2️⃣ `src/Services/KnowledgeBaseService.cs` という新しいファイルを作成し、以下の完全実装を追加します:
+2️⃣ `src/Services/KnowledgeBaseService.cs` を新規作成し、完全な実装を追加します:
 
 ```csharp
 using Azure;
@@ -593,20 +593,20 @@ public class KnowledgeBaseService
 
 ## Exercise 3: ClaimsPlugin の作成
 
-KnowledgeBaseService を利用して請求検索機能を提供する ClaimsPlugin を作成します。
+`KnowledgeBaseService` を使用して請求検索機能を提供する `ClaimsPlugin` を作成します。
 
-### 手順 1: 完全版 ClaimsPlugin の作成
+### Step 1: 完全な ClaimsPlugin の作成
 
 ??? note "このコードが行うこと"
     `ClaimsPlugin` はエージェントに請求検索機能を提供します:
     
-    - **SearchClaims**: 地域、タイプ、重大度、ステータスで請求を検索—自然言語クエリを生成し、構造化出力指示付きでエージェントリトリーバルを実行
-    - **GetClaimDetails**: 特定の請求 ID の詳細情報を取得し、LLM 用の詳細フォーマット指示を提供
-    - **NotifyUserAsync**: StreamingResponse を用いてリアルタイムのステータス更新 ("Searching...", "Retrieved data...") をユーザーに送信するヘルパーメソッド
+    - **SearchClaims**: 地域・種別・重大度・ステータスで請求を検索。自然言語クエリを生成し、構造化出力指示付きでエージェント的検索を実行
+    - **GetClaimDetails**: 特定の請求 ID の詳細情報を取得。LLM へ詳細なフォーマット指示を送信
+    - **NotifyUserAsync**: `StreamingResponse` を使用してユーザーへリアルタイムのステータス更新（"Searching..."、"Retrieved data..."）を送信
     
-    各メソッドには `[Description]` 属性があり、AI エージェントにツールを使用するタイミングと方法を伝えます。AI はユーザーの意図から自動的に呼び出すツールを決定します。
+    各メソッドには `[Description]` 属性があり、AI エージェントがツールをいつどのように使用するかを判断する手がかりとなります。
 
-1️⃣ `src/Plugins/ClaimsPlugin.cs` を新規作成し、以下の完全実装を追加します:
+1️⃣ `src/Plugins/ClaimsPlugin.cs` を新規作成し、完全な実装を追加します:
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -783,34 +783,34 @@ namespace ZavaInsurance.Plugins
 
 ## Exercise 4: サービス登録とエージェント設定
 
-Program.cs にサービスを登録し、ClaimsPlugin をエージェントに追加してすべてを連携させます。
+`Program.cs` にサービスを登録し、エージェントに `ClaimsPlugin` を追加してすべてを連携させます。
 
-### 手順 1: KnowledgeBaseService の登録とデータ初期化
+### Step 1: KnowledgeBaseService の登録とデータ初期化
 
 ??? note "このコードが行うこと"
-
-    `Program.cs` ではサービス登録を行います:
     
-    - **Service Registration**: KnowledgeBaseService をシングルトンとして登録し、アプリ全体で利用可能に
-    - **Initialization**: インデックス → Knowledge Source → Knowledge Base → サンプルデータのインデックス化（この順序が必須）
-    - **Error Handling**: 初期化エラーを捕捉し、アプリを停止させずに開発を継続
+    `Program.cs` では以下を行います:
+    
+    - **サービス登録**: `KnowledgeBaseService` をシングルトンとして登録し、アプリ全体で利用可能に
+    - **初期化**: インデックス → ナレッジソース → ナレッジベース → サンプルデータのインデックス化（この順序が必須）
+    - **エラーハンドリング**: 初期化エラーをキャッチしてアプリの停止を防止（開発時に便利）
 
 1️⃣ `src/Program.cs` を開きます。
 
-2️⃣ 先頭の using 文のセクションに以下を追加します:
+2️⃣ 他の `using` 文の上部に次を追加します:
 
 ```csharp
 using InsuranceAgent.Services;
 ```
 
-3️⃣ `builder.Services.AddSingleton<IStorage, MemoryStorage>();` を見つけ、その直後に以下を追加します:
+3️⃣ `builder.Services.AddSingleton<IStorage, MemoryStorage>();` を探し、その直後に追加します:
 
 ```csharp
 // Register Knowledge Base Service for Azure AI Search
 builder.Services.AddSingleton<KnowledgeBaseService>();
 ```
 
-4️⃣ `var app = builder.Build();` の直後に以下の初期化コードを追加します:
+4️⃣ `var app = builder.Build();` の直後に次の初期化コードを追加します:
 
 ```csharp
 // Initialize Azure AI Search Knowledge Base
@@ -839,25 +839,25 @@ using (var scope = app.Services.CreateScope())
 
 <cc-end-step lab="baf2" exercise="4" step="1" />
 
-### 手順 2: ClaimsPlugin を使用したエージェント設定
+### Step 2: ClaimsPlugin を使用したエージェント設定
 
 ??? note "このコードが行うこと"
-
-    `ZavaInsuranceAgent.cs` ファイルでエージェントに新しい ClaimsPlugin を使うよう指示します:
     
-    - **Agent Instructions**: システムプロンプトを更新し、ClaimsPlugin ツールを含める（AI に使用タイミングを伝える）
-    - **Plugin Creation**: 必要な依存関係 (context, KnowledgeBaseService, configuration) で ClaimsPlugin をインスタンス化
-    - **Tool Registration**: SearchClaims と GetClaimDetails を AI エージェントの呼び出し可能ツールとして登録
+    `ZavaInsuranceAgent.cs` でエージェントに新しい `ClaimsPlugin` を使用させます:
+    
+    - **エージェント命令**: システムプロンプトを更新し、ClaimsPlugin ツールを含める（AI に使用タイミングを指示）
+    - **プラグイン作成**: 必要な依存関係（context、knowledge base service、configuration）を渡して `ClaimsPlugin` をインスタンス化
+    - **ツール登録**: `SearchClaims` と `GetClaimDetails` を AI エージェントが呼び出せるツールとして登録
 
 1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ 先頭に以下の using 文を追加します:
+2️⃣ ファイル先頭に次の `using` 文を追加します:
 
 ```csharp
 using InsuranceAgent.Services;
 ```
 
-3️⃣ `AgentInstructions` プロパティを見つけ、以下のスニペットに置き換えます:
+3️⃣ `AgentInstructions` プロパティを見つけ、次のスニペットで置き換えます:
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -874,7 +874,7 @@ Be concise and professional in your responses.
 """;
 ```
 
-4️⃣ `src/Agent/ZavaInsuranceAgent.cs` 内の `GetClientAgent` メソッドで `StartConversationPlugin` が作成されている箇所を見つけ、その直後に以下を追加します:
+4️⃣ `src/Agent/ZavaInsuranceAgent.cs` の `GetClientAgent` メソッドを探し、`StartConversationPlugin` を生成している箇所の直後に次のスニペットを追加します:
 
 ```csharp
 var scope = _serviceProvider.CreateScope();
@@ -887,7 +887,7 @@ var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 ClaimsPlugin claimsPlugin = new(context, knowledgeBaseService, configuration);
 ```
 
-5️⃣ ツールを登録している箇所を見つけ、`toolOptions.Tools.Add(AIFunctionFactory.Create(startConversationPlugin.StartConversation))` の直後に以下を追加します:
+5️⃣ ツールを登録している箇所を見つけ、`toolOptions.Tools.Add(AIFunctionFactory.Create(startConversationPlugin.StartConversation))` の直後に次のスニペットを追加して `ClaimsPlugin` を登録します:
 
 ```csharp
 // Register ClaimsPlugin tools
@@ -897,13 +897,13 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(claimsPlugin.GetClaimDetails));
 
 <cc-end-step lab="baf2" exercise="4" step="2" />
 
-### 手順 3: StartConversationPlugin のウェルカムメッセージを更新
+### Step 3: StartConversationPlugin の歓迎メッセージを更新
 
-請求検索機能を追加したので、ウェルカムメッセージを更新して新機能を反映させましょう。
+請求検索機能を追加したので、ウェルカムメッセージに新機能を反映させましょう。
 
 1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。
 
-2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を以下に置き換えます:
+2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を次の内容に置き換えます:
 
 ```csharp
             var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
@@ -920,21 +920,21 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(claimsPlugin.GetClaimDetails));
 ```
 
 ??? note "段階的な機能更新"
-    各ラボでウェルカムメッセージを順次更新し、新しい機能を反映させます。これにより、ユーザーは開発段階ごとにエージェントの最新機能を確認できます。
+    各ラボでは新しい機能に合わせてウェルカムメッセージを順次更新します。これにより、ユーザーはエージェントが現在できることを常に正確に把握できます。
 
 <cc-end-step lab="baf2" exercise="4" step="3" />
 
 ## Exercise 5: ドキュメント検索のテスト
 
-新しい請求検索機能をテストしてみましょう！
+では、新しい請求検索機能をテストしてみましょう！
 
-### 手順 1: エージェントの実行
+### Step 1: エージェントの実行
 
 1️⃣ VS Code で **F5** を押してデバッグを開始します。
 
 2️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。
 
-3️⃣ ターミナル出力を確認します。次のように表示されるはずです:
+3️⃣ ターミナル出力を確認します。以下のような表示が出るはずです:
 
 ```
 🔍 Initializing Azure AI Search Knowledge Base...
@@ -948,29 +948,29 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(claimsPlugin.GetClaimDetails));
 ✅ Knowledge Base initialized successfully
 ```
 
-!!! note "Policies について"
-    KnowledgeBaseService の完全実装にポリシー機能が含まれている場合、ポリシー関連の追加出力が表示されることがあります。これは想定内で、今後のラボでポリシーを使用します。今回は請求機能に注目してください。
+!!! note "ポリシーについて"
+    `KnowledgeBaseService` の完全実装にポリシー機能が含まれている場合、ポリシー関連の追加出力が表示されることがあります。これは想定どおりで、将来のラボで使用します。今回は請求機能に注目してください。
 
-4️⃣ ブラウザーが開き、Microsoft 365 Copilot が表示されます。前回のラボでエージェントはすでにインストールされています。
+4️⃣ ブラウザーが開き、Microsoft 365 Copilot が表示されます。前のラボでエージェントをインストール済みのはずです。
 
-5️⃣ **Azure Portal で確認**（任意ですが推奨）:
+5️⃣ **Azure Portal で確認**（任意推奨）:
 
 - [Azure Portal](https://portal.azure.com){target=_blank} で Azure AI Search サービス名を検索
-- 左メニューの **Indexes** をクリックし、`claims-index` があることを確認。インデックス名をクリックし **Search** で 35 件のドキュメントを確認
-- 検索サービスに戻り **Agentic retrieval** > **Knowledge Bases** をクリックし、`zava-insurance-kb` が表示されていることを確認
-- **Search Explorer** を使用してインデックスに直接クエリを実行することもできます
+- 左ペインの **Indexes** をクリックし、`claims-index` があることを確認。名前をクリックし **Search** を選択すると、インデックスされた 35 件のドキュメントを確認できます
+- 検索サービスに戻り **Agentic retrieval** > **Knowledge Bases** をクリックし、`zava-insurance-kb` があることを確認
+- **Search Explorer** を使用して、インデックスに対して直接クエリを試すこともできます
 
 <cc-end-step lab="baf2" exercise="5" step="1" />
 
-### 手順 2: 請求検索のテスト
+### Step 2: 請求検索のテスト
 
-1️⃣ Microsoft 365 Copilot で、より具体的な検索を試します:
+1️⃣ Microsoft 365 Copilot で、次のような具体的な検索を試します:
 
 ```text
 Find claims in the South region
 ```
 
-2️⃣ 次を試します:
+2️⃣ 次も試してみましょう:
 
 ```text
 Show me auto claims with medium severity
@@ -978,7 +978,7 @@ Show me auto claims with medium severity
 
 <cc-end-step lab="baf2" exercise="5" step="2" />
 
-### 手順 3: 請求詳細のテスト
+### Step 3: 請求詳細のテスト
 
 1️⃣ 次を試します:
 
@@ -986,9 +986,9 @@ Show me auto claims with medium severity
 Get details for claim CLM-2025-001007
 ```
 
-エージェントは `GetClaimDetails` を使用して詳細情報を返すはずです。今後のラボでデータを追加し、ポリシーや請求履歴を表示するなど、レスポンスをさらに強化していきます。
+エージェントは `GetClaimDetails` を使用し、詳細情報を返すはずです。今後のラボでさらにデータを追加し、ポリシーや請求履歴の表示など、応答を強化していきます。
 
-2️⃣ 別の請求を試します:
+2️⃣ 別の請求でも試してみましょう:
 
 ```text
 Show me information about claim CLM-2025-001003
@@ -998,17 +998,17 @@ Show me information about claim CLM-2025-001003
 
 ---8<--- "ja/b-congratulations.md"
 
-ラボ BAF2 - Azure AI Search を使用したドキュメント検索の追加を完了しました！
+ラボ BAF2 - Azure AI Search を使用したドキュメント検索の追加を完了しました!
 
-次のことを学習しました:
+今回学んだ内容:
 
 - ✅ サンプルデータで Azure AI Search をセットアップ
-- ✅ AI 搭載検索用の KnowledgeBaseService を作成
-- ✅ 多彩な検索機能を持つ ClaimsPlugin を構築
-- ✅ 起動時にサービス登録と Knowledge Base の初期化を実施
+- ✅ AI 検索用の KnowledgeBaseService を作成
+- ✅ 複数の検索機能を備えた ClaimsPlugin を構築
+- ✅ スタートアップ時にサービスを登録しナレッジベースを初期化
 - ✅ 自然言語クエリでドキュメント検索をテスト
 
-次のラボでは、画像を処理するビジョン解析機能を追加し、エージェントをさらに強化します。
+次のラボでは、画像解析機能を追加して、請求関連の画像を処理できるようにエージェントをさらに強化します。
 
 <cc-next url="../03-add-vision-analysis" />
 

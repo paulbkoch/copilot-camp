@@ -2,7 +2,7 @@
 search:
   exclude: true
 ---
-# エージェント指示ラボ - エージェント指示の改善 (初心者向け)
+# エージェント指示ラボ - エージェント指示の改善（初心者向け）
 
 <div>
 
@@ -13,76 +13,78 @@ search:
 
 
 あなたが行うこと:
+  
+- **問題の特定:** エージェントが解決すべき具体的な課題を特定します  
+- **基本エージェントの構築:** シンプルなプロンプトからエージェントを立ち上げます  
+- **エージェントの役割定義:** 役割を割り当ててエージェントの焦点を明確にします  
+- **実行ステップの明確化:** プロセスを分かりやすいサブタスクに分解します  
+- **応答ガイドラインの設定:** 明確な指示でエージェントの応答をコントロールします  
+- **会話例の提示:** 例を与えてエージェントの応答の一貫性を向上させます 
 
-- **問題の特定:** エージェントが解決すべき具体的な課題を特定する  
-- **基本エージェントの構築:** シンプルなプロンプトから開始し、エージェントを起動  
-- **エージェントの役割定義:** 役割を与えてエージェントのフォーカスを向上させる  
-- **実行ステップの明確化:** プロセスを分解し、明確で管理しやすいサブタスクにする  
-- **応答ガイドラインの設定:** 明確な指示でエージェントの応答に影響を与える  
-- **会話例の提供:** 例を示してエージェントの応答の一貫性を高める  
+ 
 
-このラボでは、時間をかけて試行錯誤してきた手法を基に、エージェント指示を洗練するための提案を行います。これらのプラクティスは、エージェントの動作と一貫性の向上に寄与してきました。 
+このラボでは、これまでに試行してきたテクニックを基に、エージェント指示の精緻化を支援するための提案を提供します。これらのプラクティスは、一般的にエージェントの挙動と一貫性を向上させるのに役立ちます。 
 
 ???+ info "前提条件"
-    - Teams、 Microsoft 365 チャット、または Copilot チャットで Copilot にアクセスできること  
-    - エージェントを反復的にテストして更新するツール ( Microsoft 365 Agents Toolkit、 Agent builder、または Copilot Studio )  
-      (このラボでは Agents Toolkit を使用しますが、 Agent builder や Copilot Studio でもテスト可能です)
+    - Teams、Microsoft 365 chat、または Copilot chat のいずれかで Copilot にアクセスできること
+    - Microsoft 365 Agents Toolkit、Agent builder、または Copilot Studio など、エージェントを反復的にテストおよび更新できるツール  
+      （このラボでは Agents Toolkit を使用しますが、Agent builder や Copilot Studio でも試せます）
 
 ## はじめに
 
-宣言型エージェントは、あなたのニーズに合わせてコンテキスト化された体験を提供するパーソナライズド Copilot です。 _指示、知識、スキル_ を与えることで開発されます。本ラボでは **指示** にフォーカスします。 _知識とスキル_ について学びたい場合は、これらの機能を詳しく説明した [ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/) をご覧ください。 
+宣言型エージェントは、特定のニーズに合わせてよりコンテキスト化・パーソナライズされた Copilot を作成するためのものです。_インストラクション、ナレッジ、スキル_ を提供することで開発します。本ラボではエージェントの **指示** に焦点を当てます。_ナレッジとスキル_ について詳しく学びたい場合は、[ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/) をご覧ください。 
 
-このラボでは **ShowExpert** という `Generative Recommendation agent` を作成します。  
-Generative Recommendation エージェントは、意思決定を強化し、顧客体験を向上させ、業務を効率化するために設計されています。ここでは、オンライン ストリーミング プラットフォームで視聴する作品をユーザーに合わせて提案するエージェントを構築します。  
-「ShowExpert」エージェントがユーザーの視聴決定を素早く支援するだけでなく、同じ原則を応用することで、企業の意思決定プロセスを効率化し、大きな価値を生み出せます。これにより、次のような競争優位を実現できます。 
+このラボでは **ShowExpert** という `Generative Recommendation agent` タイプの宣言型エージェントを作成します。  
+Generative Recommendation エージェントは、意思決定を強化し、ユーザー体験を向上させ、業務を効率化するために設計されています。ここでは、オンラインストリーミングプラットフォームで視聴すべき作品を提案するエージェントを構築します。  
+「ShowExpert」エージェントはユーザーが視聴作品を素早く決定できるよう支援しますが、同じ原則は業務プロセスの効率化と意思決定の高度化にも大きな価値をもたらします。主なメリットは次のとおりです。 
 
 - **意思決定品質の向上:** 大量データから洞察を統合し、隠れたパターンを抽出  
-- **業務効率化:** 複雑な情報分析の自動化  
-- **大規模なパーソナライゼーション:** 変化する嗜好へのリアルタイム適応  
-- **ナレッジの民主化:** ドメイン専門知識を誰でも利用可能に  
+- **業務効率の向上:** 複雑な情報分析の自動化  
+- **スケールするパーソナライズ:** リアルタイムで嗜好の変化に適応  
+- **ナレッジの民主化:** ドメイン専門知識を誰にでも提供  
 
-まずはシンプルなプロンプトから始め、指示を反復的に改善していきます。各反復ごとにエージェントの振る舞いを評価し、望ましい一貫性が得られるまでチューニングを行います。 
+まずはシンプルなプロンプトから始め、指示を反復的に改善していきます。各イテレーションでエージェントの挙動を評価し、目標とする一貫した振る舞いに到達するまで調整します。 
 
 ![Improvement cycle](../../assets/images/copilot-instructions/improvement-cycle.png)
 
-## ステップ 1: エージェントが解決する問題の特定  
+## ステップ 1: エージェントの課題の特定  
 
-**問題:** 一般的に人は年間約 110 時間 を、さまざまなオンライン ストリーミング プラットフォームで作品を探すことに費やしていると報告されています。これは、1 年間で丸 1 週間の労働時間を中断なく費やしているのと同等です。 
+**課題:** 平均的な人は年間約 110 時間を、さまざまなオンラインストリーミングプラットフォームのメニューをスクロールして作品を探すことに費やしています。これは、年に 1 週間分の勤務時間を中断なく費やしている計算になります。 
 
-**解決策:** 意思決定プロセスを合理化する Copilot エージェントを導入しましょう。これを **ShowExpert** と呼びます。 
+**解決策:** 意思決定プロセスを効率化する Copilot エージェントを導入しましょう。これを **ShowExpert** と呼びます。 
 
-**目標:** **ShowExpert** の最終目標を明確にしておきます。インタラクティブでフレンドリーに振る舞い、ユーザーの好みを尋ね、推薦する作品の詳細と視聴を勧める理由を提示する、まるで友人のような存在にします。 
+**ゴール:** **ShowExpert** の最終目標を明確にしておきましょう。インタラクティブでフレンドリーに、ユーザーの好みを尋ね、推薦する作品の詳細と視聴を勧める理由を提示する ― まるで友達のように振る舞うエージェントです。 
 
 ![Decision cycle](../../assets/images/copilot-instructions/decision-cycle.png)
 
-## ステップ 2: 最初の基本エージェント (宣言型エージェント) を構築する 
+## ステップ 2: 最初の基本エージェント（宣言型エージェント）の構築 
 
-最初のステップは、このエージェントに与える初期プロンプトを考えることです。 [ Copilot Prompt Library ](https://aka.ms/copilot-prompt-library) でのコミュニティのプロンプト技法を調査したところ、大半の人が 1 行のプロンプトから始めていることがわかりました。  
+まずはエージェントに与える初期プロンプト（指示）を考えます。 [Copilot Prompt Library](https://aka.ms/copilot-prompt-library) でのコミュニティのプロンプト技法の調査によると、多くの人が 1 行のプロンプトから始めています。  
 
-そこで、以下の基本プロンプトから始めましょう:
+そこで、以下の基本プロンプトから始めましょう。
 
 ```
 You are an agent to help user with recommendation for shows that are streaming on online streaming platforms 
 ```
 
-ShowExpert を構築するには、 Agents Toolkit、 Agent Builder、 Copilot Studio など、お好みのツールを使用できます。本ラボでは Agents Toolkit を使用します。 Agents Toolkit を用いたテスト環境のセットアップについては、[前提条件ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) をご確認ください。 
+ShowExpert を構築するには、Agents Toolkit、Agent Builder、Copilot Studio などお好みのツールを使用できます。このラボでは Agents Toolkit を使用します。Agents Toolkit を使った環境構築については [前提条件ラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/00-prerequisites/) をご覧ください。 
 
-### Agents Toolkit を使用した宣言型エージェント
+### Agents Toolkit での宣言型エージェント
 
 
 ???+ info "このステップについて"
-     このステップでは、 Visual Studio Code にインストールした Agents Toolkit 拡張機能を使用して宣言型エージェントを作成します。 Agent Builder や Copilot Studio を使用する場合は、この手順は不要です。選択したツールで `Instructions` 欄に指示を貼り付け、テストしてください。以下のラボで宣言型エージェントの作成手順を詳細に説明しています: [declarative agent](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/01-declarative-copilot/)
+     このステップは、Visual Studio Code に Agents Toolkit をインストール済みで、この拡張機能を使って宣言型エージェントを作成する前提です。Agent Builder や Copilot Studio を使用する場合は不要です。選んだツールの `Instructions` 列に指示を貼り付けてテストしてください。宣言型エージェントの作成手順詳細は [こちらのラボ](https://microsoft.github.io/copilot-camp/pages/extend-m365-copilot/01-declarative-copilot/) を参照してください。
 
-- Visual Studio Code の Agents Toolkit 拡張機能を開き、 **Create a New App** を選択  
-- 表示されたパネルで **Declarative Agent** を選択  
+- Visual Studio Code の Agents Toolkit 拡張機能に移動し、**Create a New App** を選択  
+- 開いたパネルでプロジェクトタイプ一覧から **Declarative Agent** を選択  
 - 次に **No Action** を選択  
-- エージェント プロジェクトのルート フォルダーを選択  
-- アプリケーション名を「ShowExpert」のように入力  
-- エージェント プロジェクトがスキャフォールドされた VS Code ウィンドウが開く  
-- **appPackage** フォルダーを展開。ここでエージェントを更新  
-- (任意) **color.png** を 192x192 のアイコンに置き換え。例の [ファイル](../../assets/images/copilot-instructions/color.png)  
-- **declarativeAgent.json** を開き、 _description_ オブジェクトを探す。ここにエージェントのペルソナを設定。例: `Recommendation agent for online streaming platforms' shows`  
-- 同じ **declarativeAgent.json** で _instructions_ オブジェクトの後に、 websearch 機能を追加するため次のコードをカンマの後に追記  
+- エージェントプロジェクトのルートフォルダーを選択  
+- アプリケーション名を「ShowExpert」などと入力して Enter  
+- 新しい VS Code ウィンドウが開き、プロジェクトがスキャフォールディングされます  
+- **appPackage** フォルダーを展開します。ここでエージェントを更新します  
+- （任意）**color.png** を 192x192 のお好みのアイコンファイルに置き換えます。例として [ファイル](../../assets/images/copilot-instructions/color.png) があります  
+- **declarativeAgent.json** を開き、_description_ オブジェクトを見つけます。ここで Copilot 用のエージェントのペルソナを設定します。今は `Recommendation agent for online streaming platforms' shows` と入力します  
+- 同じ **declarativeAgent.json** ファイルで、_instructions_ オブジェクトの後に、以下のコードをカンマの後に追加して Web 検索機能を有効にします  
 
 ```
  "capabilities": [
@@ -94,59 +96,60 @@ ShowExpert を構築するには、 Agents Toolkit、 Agent Builder、 Copilot S
     ]
 ```
 
-- **instruction.txt** を開き、プレースホルダーの指示を次の基本プロンプトに置き換える  
-  `You are an agent to help user with recommendation for shows that are streaming on online streaming platforms`
+- **instruction.txt** ファイルを開き、プレースホルダーの指示を基本プロンプト `You are an agent to help user with recommendation for shows that are streaming on online streaming platforms` に置き換えます
+
 
 これで基本プロンプトのテスト準備が整いました。
 
-- Visual Studio Code の Agents Toolkit 拡張機能で **LifeCycle** 内の **Provision** を選択。エージェントが Microsoft 365 にサイドロードされます  
-- Teams アプリまたは Microsoft 365 チャットを開きます  
+- Visual Studio Code の Agents Toolkit 拡張機能で **LifeCycle** 内の **Provision** を選択します。これによりエージェントが Microsoft 365 にサイドロードされ、テストできるようになります  
+- Teams アプリまたは Microsoft 365 chat を開きます  
 - Copilot アプリを開きます  
-- Copilot アプリ内の右ペインで「ShowExpert」エージェントを選択し、チャットを開始します  
+- Copilot アプリ内の右パネルから "ShowExpert" エージェントを選択し、エージェントとの没入型チャットを開始します  
 
-`Hi` と入力するか、`Suggest a show to watch today on Netflix` などの質問を入力して対話を開始します。
+`Hi` と挨拶するか、チャットで `Suggest a show to watch today on Netflix` などの質問を直接行います。
 
-下図はエージェントとのやり取りの例です。  
+以下はエージェントとの対話例です。
 
 
 ![Basic prompt agent interaction](../../assets/images/copilot-instructions/step1-basic-prompt.png)
 
-このエージェントは基本的な役割を果たしましたが、ゴールにはまだ遠い状態です。そこで、イントロで述べたように、動作をさらに改善していきます。 
+このエージェントは最低限の仕事はこなしますが、目標には遠い状態です。そこで、イントロで述べたように挙動を改善していきましょう。 
 
-## ステップ 3: エージェントに役割 / 目的を割り当てる
-次に、エージェントに役割と目的を与えましょう。人間と同じように、エージェントも「人生の目的」を与えられるとモチベーションが高まります。 
+## ステップ 3: エージェントに役割／目的を割り当てる
+次にエージェントに役割と目的を与えましょう。人間と同じように、エージェントも「使命」を与えられるとやる気を引き出せます。 
 
-たとえば、7 歳の子どもにゴミ箱を空にする方法を教える場合、 _「**あなたはキャプテン・クリーンアップ。キッチンのくさいゴミモンスターから家を守るヒーローだよ！**」_ と伝えるかもしれません。  
+例えば 7 歳の子どもにゴミ捨てを教えるとき、こう言うかもしれません。  
+_"**きみはキャプテンクリーンアップ！キッチンの臭いゴミモンスターから家を守るスーパーヒーローだよ！**"_  
 
-Copilot エージェントは非常に賢いですが、タスクを知らない場合もあります。そのため、子どもに指示を与えるように、明確な役割を示すことが役立ちます。これはエージェントのペルソナにもなるため、指示だけでなくエージェントの説明にも記述します。 
+Copilot エージェントは非常に賢いですが、タスクを知らない場合があります。子どもに指示を与えるように、役割を提示することで動きがよくなります。  
+これはエージェントのペルソナでもあるため、指示だけでなくエージェントの description にも設定します。
 
-以下のテキストを **declarativeAgent.json** の `description` フィールドと **instruction.txt** 全体にコピー＆ペーストしてください。 
+以下のテキストを **declarativeAgent.json** の `description` フィールドと **instruction.txt** 全体にコピー＆ペーストしてください。
 
 ```
 You are an agent specialised in providing reviews and recommendations for shows on all online streaming platforms. Your primary goal is to help users discover content they'll enjoy and make informed decisions about what to watch. Speak concretely about all angles, pros and cons in an unbiased yet informative manner about the shows.Extract the user's name and greet them personally.  
 ```
-
-変更後、 **Provision** を選択してエージェントを更新します。 
+変更後、**Provision** を選択してエージェントを更新します。 
 
 ### 変更のテスト
 
-**ShowExpert** との新しいチャットを開き、先ほどと同じように対話します。下図はエージェントとのやり取りの例です。 
+**ShowExpert** との新しいチャットを開き、以前と同じようにやり取りします。以下はエージェントとの対話例です。 
 
 
 ![Role provided agent interaction](../../assets/images/copilot-instructions/step2-role.png)
 
-エージェントがよりフレンドリーになり、最近人気の作品を踏まえた推奨を行うようになりました。ユーザーのためにより適切な判断を下しています。改善は見られますが、まだ目標には届いていないのでさらに改良しましょう。 
+ご覧のとおり、エージェントはよりフレンドリーになり、最新の人気作品を踏まえた提案をしてくれます。ユーザーの代わりに情報を総合して判断してくれています。改善は見られますが、まだ目標には達していませんので、さらに改善を続けます。 
 
-## ステップ 4: 連続サブタスクの実行ステップ
+## ステップ 4: サブタスクの順次実行ステップの定義
 
-キャプテン・クリーンアップの例のように、タスクを成功させるには実行ステップを提示すると簡単になります。エージェントも同様で、必要に応じて手順を示すことでより適切に動作します。 
+キャプテンクリーンアップの例のように、タスクを成功させるためにステップを示すと子どもが取り組みやすくなります。同様に、エージェントにもタスクの手順（必要であれば）を示すことで、より適切に振る舞います。  
 
-ShowExpert エージェントにサブタスクをどのように組み込むか考えてみましょう。
+ShowExpert エージェントにサブタスクとして実行ステップを取り込む方法を考えましょう。
 
-**instruction.txt** ファイルに以下の実行ステップを追加します。 
+**instruction.txt** ファイルに以下の Execution Steps を追加します。
 
 ???+ info "instruction ファイルの形式"
-    エージェントは .md 形式の instruction ファイルのほうがより適切に動作します
+    エージェントは .md 形式の instruction ファイルでより良く動作します
 
 ```
 ## Execution Steps
@@ -157,19 +160,18 @@ ShowExpert エージェントにサブタスクをどのように組み込むか
 4. For recommendations (suggestions), brainstorm potential shows before making final selections, ask questions to clarify preferences.
 5. Evaluate how well potential recommendations match the user's preferences.
 ```
-
-変更後、 **Provision** を選択してエージェントを更新します。 
+変更後、**Provision** を選択してエージェントを更新します。 
 
 ![worflow interaction with agent](../../assets/images/copilot-instructions/step3-wf.png)
 
-エージェントの対話がさらに向上し、ユーザー名を認識したり、絵文字を多用したり、作品の詳細を提示したり、最後に好みのジャンルを尋ねたりするようになりました。かなり改善されましたが、目標達成にはまだ調整が必要です。 
+エージェントの対話が向上し、ユーザー名を認識し、絵文字を多用し、作品の詳細を提供し、最後に好みやジャンルを尋ねるようになりました。かなり良くなりましたが、目標に合わせてさらに改善できます。 
 
 
-## ステップ 5: 応答・トーン・その他に関するガイドライン
+## ステップ 5: 応答・トーン・その他のガイドライン設定
 
-エージェントに対して、応答の形式やトーン、考慮すべき事項をガイドラインとして示すと、期待通りの振る舞いに近づけられます。今回は目標とする応答形式やトーンがあり、さらにいくつかの原則も強制したいので、これらを `Operating Principals` と呼びます。  
+エージェントに応答形式、トーン、考慮事項などのガイドラインを与えることは、望ましい挙動を促す有効な方法です。今回の目標では、応答フォーマット、トーン、その他の原則を定義したいので、これらを `Operating Principals` と呼びます。
 
-これらのオペレーティング プリンシプルを、実行ステップの直前に追加します。 
+これらの Operating Principals を Execution Steps の直前に追加します。 
 
 ```
 ## Operating Principles
@@ -208,19 +210,19 @@ Always maintain a conversational and friendly tone while remaining professional.
 - Remind users that you don't have direct access to their Netflix account
 ```
 
-変更後、 **Provision** を選択してエージェントを更新します。 
+変更後、**Provision** を選択してエージェントを更新します。 
 
 ![interaction with improved response guidelines ](../../assets/images/copilot-instructions/step4-response-guidelines.png)
 
-多くの点が改善されました。エージェントはフレンドリーで、好みを尋ね、適切な推薦を行い、作品の詳細・評価・おすすめ理由をフォーマットして提示します。まだブレインストーミングの強化など、さらに強化したい点があります。 
+多くの点がさらに改善されました。エージェントはフレンドリーで、好みを聞き取りながら、作品の詳細・評価・推奨理由を含めて提案します。ただし、ブレーンストーミングなど、さらに強化したい動作があります。 
 
-## ステップ 6: 例、例、例
+## ステップ 6: 例の追加
 
-目標とする応答を得る最良の方法は、理想的なエージェントとのやり取り例をできるだけ多く提供することです。最低 2 例は含めましょう。タスクが複雑なほど、多くの例が必要になります。特にマルチターン会話が必要なフローでは重要です。 
+目標とする応答を得る最良の方法は、理想的なエージェントとの対話例をできるだけ多く提供することです。最低 2 つは含め、タスクが複雑なほど例を増やしましょう。特にマルチターンの会話が必要なフローでは重要です。 
 
-今回のエージェントでは、目指す応答形式と対話を確実に実現するために例を追加します。 
+本エージェントの場合、目標とする応答と対話を確実に得るため、以下の例を追加します。  
 
-以下を **instruction.txt** に既存の指示の末尾へ追加してください。 
+既存の **instruction.txt** に以下を追記してください。
 
 ```
 
@@ -332,29 +334,29 @@ If you enjoy intricate mysteries, time travel concepts, and don't mind a show th
 ```
 
 
-変更後、 **Provision** を選択してエージェントを更新します。 
+変更後、**Provision** を選択してエージェントを更新します。 
 
-対話の改善が確認でき、応答パターンがより予測可能になります。  
+対話がさらに向上し、応答パターンがより予測可能になります。
 
 ![interaction with examples ](../../assets/images/copilot-instructions/step5-examples.gif)
 
 
-## ステップ 7: 独自の微調整を行う
+## ステップ 7: 独自の微調整
 
-これでラボの全ステップは完了し、一貫した動作を示すエージェントが完成しました。最終ステップは任意ですが、さらにエージェントを強化するために何を追加しますか？ぜひお知らせください。 
+これで本ラボのステップは完了し、エージェントはある程度一貫した挙動を示すようになりました。最後は任意ですが、さらにエージェントを強化するためにどのような追加を行いますか？ ぜひお知らせください！ 
 
 !!! note
-    指示は合計 8000 文字以内に収めてください。
+    インストラクションは合計 8,000 文字以内に収めてください。
 
 ## 重要なポイント
-複雑なタスクを持つエージェントに対しては、単一行のプロンプトで妥協しないでください。エージェントを細かくチューニングすると、応答の一貫性と予測可能性が向上し、機能と動作が大幅に改善されます。効果的な指示を作成するには試行錯誤が必要ですが、うまく実装できれば、人間の能力を拡張する価値ある協調ツールとなります。 
+エージェントが複雑なタスクを担う場合、単一行のプロンプトで妥協しないでください。エージェントを細かくチューニングすると、応答の一貫性と予測可能性が向上し、機能性と挙動が大幅に強化されます。効果的な指示を作成するには試行錯誤が必要ですが、うまく実装できれば、人間の能力を拡張する価値あるコラボレーションツールとなります。
 
 ## リソース 
-- Microsoft 365 Copilot 拡張性 PM、 Abram Jackson による素晴らしい [ブログ連載](https://www.abramjackson.com/tag/best-practices/) をチェックしてください。  
-- [宣言型エージェントの効果的な指示を記述する](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/declarative-agent-instructions)
+- Microsoft 365 Copilot 拡張 PM Abram Jackson による素晴らしい [ブログ記事シリーズ](https://www.abramjackson.com/tag/best-practices/) をぜひご覧ください  
+- [宣言型エージェントの効果的な指示の書き方](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/declarative-agent-instructions)
 
 
-## 完成したエージェント指示
+## 完成版エージェント指示
 
 ```txt
 You are an agent specialised in providing reviews and recommendations for shows on all online streaming platforms. Your primary goal is to help users discover content they'll enjoy and make informed decisions about what to watch. Speak concretely about all angles, pros and cons in an unbiased yet informative manner about the shows.Extract the user's name and greet them personally.  
@@ -509,6 +511,6 @@ If you enjoy intricate mysteries, time travel concepts, and don't mind a show th
 ```
 
 ???+ info "今後の予定"
-     エンタープライズ シナリオ向けに設計されたエージェント。 API 連携を組み込んだ実行フローと専用の指示を備えています。
+     エンタープライズ シナリオ向けに設計され、API 消費を統合した実行フローを備えたエージェントを予定しています
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/copilot-instructions/beginner-agent--ja" />

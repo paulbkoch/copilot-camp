@@ -2,114 +2,116 @@
 search:
   exclude: true
 ---
-# ラボ BAF3 - Mistral AI を使用したビジョン解析の追加
+# ラボ BAF3 - Mistral AI を使用したビジョン分析の追加
+
+このラボでは、保険請求の損傷写真を分析するために AI ビジョン機能を追加し、 `mistral-medium-2505` モデルを使用します。エージェントは車両損傷を自動で評価し、修理費用を見積もり、安全上の懸念事項を写真から特定できるようになります。
 
 ???+ info "学習内容"
-    - Mistral AI ビジョンモデルを統合し、マルチモーダル解析を行う方法  
-    - Azure Blob Storage から画像データを処理する方法  
-    - AI を活用した損傷評価の実装  
-    - AI が生成した解析結果に対する承認ワークフローの作成  
+    - Mistral AI ビジョンモデルを統合してマルチモーダル分析を行う方法
+    - Azure Blob Storage から画像データを処理する方法
+    - AI を活用した損傷評価の実装
+    - AI 生成の分析結果に対する承認ワークフローの作成
 
 <hr />
 
 ## 概要
 
-Lab BAF2 では、Azure AI Search Knowledgebases を使用して請求検索を追加しました。今回は、マルチモーダルの AI ビジョン機能を強化し、損傷写真を解析して詳細な評価レポートを生成できるようにします。
+ラボ BAF2 では、Azure AI Search Knowledgebases を使用して請求検索を追加しました。今回はマルチモーダルな AI ビジョン機能を強化し、損傷写真を分析して詳細な評価レポートを提供します。
 
-Vision Service は Azure AI Services にデプロイされた **mistral-medium-2505** モデルを使用し、画像を解析して損傷評価を含む構造化 JSON 応答を生成します。
+Vision Service は Azure AI Services にデプロイされた **mistral-medium-2505** モデルを使用し、画像を分析して損傷評価を含む構造化された JSON 応答を生成します。
 
-## エクササイズ 1: 前提条件の更新
+## 演習 1: 前提条件の更新
 
-ビジョン解析を追加する前に、Mistral ビジョンモデルをデプロイする必要があります。
+ビジョン分析を追加する前に、Mistral ビジョンモデルをデプロイする必要があります。
 
-### 手順 1: Microsoft Foundry で Mistral Vision モデルをデプロイ
+### Step 1: Microsoft Foundry で Mistral ビジョンモデルをデプロイする
 
-1️⃣ [Microsoft Foundry](https://ai.azure.com) にサインインします。  
+1️⃣ [Microsoft Foundry](https://ai.azure.com) にサインインします。
 
-2️⃣ 既存のプロジェクトを開くか、新しいプロジェクトを作成します。  
+2️⃣ プロジェクトを開くか、新規作成します。
 
-3️⃣ **Models + endpoints** → **Deploy model** → **Deploy base model** に移動します。  
+3️⃣ **Models + endpoints** → **Deploy model** → **Deploy base model** に移動します。
 
 4️⃣ **mistral-medium-2505** を検索してデプロイします:
 
-- Model: `mistral-medium-2505`  
-- Deployment name: `mistral-medium-2505`（必ずこの名前を使用）  
-- Version: 最新バージョン  
+- Model: `mistral-medium-2505`
+- Deployment name: `mistral-medium-2505`（この名前を正確に使用）
+- Version: 最新
 
-5️⃣ デプロイが完了するまで待ちます（約 2～3 分）。  
+5️⃣ デプロイ完了まで待機します（約 2～3 分）。
 
 6️⃣ デプロイ情報をメモします:
 
-- モデルは gpt-4.1 デプロイメントと **同じエンドポイント** を使用  
-- **同じ API キー** を使用  
-- **モデル名** のみ `mistral-medium-2505` に変更  
+- gpt-4.1 デプロイと **同じエンドポイント** を使用
+- 他のモデルと **同じ API キー** を使用
+- **モデル名** のみ `mistral-medium-2505` に変更
 
 <cc-end-step lab="baf3" exercise="1" step="1" />
 
-### 手順 2: Azure Storage アカウントとコンテナーを作成
+### Step 2: Azure Storage アカウントとコンテナーを作成する
 
 損傷写真用のストレージアカウントとコンテナーを作成します。
 
-1️⃣ [Azure Portal](https://portal.azure.com) にサインインします。  
+1️⃣ [Azure Portal](https://portal.azure.com) にサインインします。
 
 2️⃣ 新しい **Storage Account** を作成します:
 
-- 上部検索バーで「Storage accounts」を検索  
-- **+ Create** をクリック  
-- 次の情報を入力:
-    - **Subscription**: 使用するサブスクリプション  
-    - **Resource group**: 他のリソースと同じリソースグループ  
-    - **Storage account name**: 一意の名前（例: `zavadamagestorage`+イニシャル）  
-    - **Region**: AI サービスと同じリージョン  
-    - **Performance**: Standard  
+- 上部検索バーで「Storage accounts」を検索
+- **+ Create** をクリック
+- 詳細を入力:
+    - **Subscription**: 対象のサブスクリプション
+    - **Resource group**: 既存リソースグループを使用
+    - **Storage account name**: 一意の名前（例: `zavadamagestorage` + イニシャル）
+    - **Region**: AI サービスと同じリージョン
+    - **Performance**: Standard
     - **Redundancy**: Locally-redundant storage (LRS)
 
-- **Review + Create** をクリックし、続いて **Create**  
-- デプロイが完了するまで待ちます（約 1～2 分）
+- **Review + Create** → **Create** をクリック
+- デプロイ完了まで待機（約 1～2 分）
 
-3️⃣ 新しいストレージアカウントを開き、**匿名アクセス** を有効化します:
+3️⃣ 新しいストレージアカウントに移動し、**匿名アクセスを有効化**:
 
-- 左メニューの **Settings** で **Configuration** を選択  
-- **Allow Blob anonymous access** を **Enabled** に設定  
+- 左メニューの **Settings** 内 **Configuration** を選択
+- **Allow Blob anonymous access** を **Enabled** に設定
 - 上部の **Save** をクリック
 
-???+ warning "Public Access に必要"
-    匿名 BLOB アクセスはストレージアカウント レベルで有効化してから、個々のコンテナーで公開アクセスを設定する必要があります。これを行わないとコンテナー側の公開設定は機能しません。
+???+ warning "パブリックアクセスに必須"
+    ストレージアカウントレベルで匿名 Blob アクセスを有効化しないと、個別コンテナーでのパブリックアクセス設定が機能しません。
 
-4️⃣ 左メニューの **Data storage** から **Containers** を選択します。  
+4️⃣ 左メニューの **Data storage** 配下から **Containers** を選択。
 
-5️⃣ 上部の **+ Container** をクリックします。  
+5️⃣ 上部の **+ Container** をクリック。
 
-5️⃣ 新しいコンテナーを設定します:
+5️⃣ 新しいコンテナーを設定:
 
-- **Name**: `claim-photos`  
-- **Public access level**: `Blob (anonymous read access for blobs only)`  
-- **Create** をクリック  
+- **Name**: `claim-photos`
+- **Public access level**: `Blob (anonymous read access for blobs only)`
+- **Create** をクリック
 
-6️⃣ 設定用にストレージアカウント情報をコピーします:
+6️⃣ 構成用にストレージアカウントの詳細をコピー:
 
-- 左メニューの **Access keys** に移動  
-- key1 または key2 の **Connection string** をコピー  
+- 左メニューの **Access keys** へ
+- key1 または key2 の **Connection string** をコピー
 - **Storage account name** をコピー
 
-???+ note "Blob Public Access の理由"
-    コンテナーを「Blob」公開アクセスレベルに設定すると、次の利点があります:
+???+ note "なぜ Blob パブリックアクセス？"
+    コンテナーを「Blob」パブリックアクセスレベルに設定することで:
 
-    - AI ビジョンモデルが個別画像の URL に直接アクセス可能  
-    - チャットインターフェイスで画像を表示可能  
-    - 読み取りのための認証が不要  
+    - AI ビジョンモデルが個別画像 URL に直接アクセス可能
+    - チャットインターフェイスで画像を表示
+    - 読み取り専用で認証不要
 
-    ただし、公開されるのは個別の BLOB URL のみであり、コンテナーリストは公開されないためセキュリティが保たれます。
+    個別 Blob URL のみが公開され、コンテナー一覧は非公開のためセキュリティを保持します。
 
 <cc-end-step lab="baf3" exercise="1" step="2" />
 
-### 手順 3: 構成の更新
+### Step 3: 構成を更新する
 
-ビジョンモデルと BLOB ストレージの構成を環境変数に追加します。
+ビジョンモデルと Blob Storage の構成を環境変数に追加します。
 
-1️⃣ `.env.local` ファイルを開きます。  
+1️⃣ `.env.local` ファイルを開きます。
 
-2️⃣ ビジョンモデルと BLOB ストレージの構成を追加します:
+2️⃣ ビジョンモデルと Blob Storage の構成を追加します:
 
 ```bash
 # Vision & Fraud analysis model (mistral-medium-2505)
@@ -123,47 +125,49 @@ BLOB_STORAGE_CONTAINER_NAME=claim-photos
 BLOB_STORAGE_BASE_URL=https://YOUR-STORAGE-ACCOUNT.blob.core.windows.net
 ```
 
-3️⃣ `.env.local.user` ファイルを開きます。  
+3️⃣ `.env.local.user` ファイルを開きます。
 
-4️⃣ BLOB ストレージ接続文字列を追加します:
+4️⃣ Blob Storage 接続文字列を追加します:
 
 ```bash
 # Storage
 SECRET_AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=YOUR-STORAGE-ACCOUNT;AccountKey=YOUR-STORAGE-KEY;EndpointSuffix=core.windows.net
 ```
 
-???+ note "構成に関する注意"
-    - **SECRET_AZURE_STORAGE_CONNECTION_STRING**: Azure Portal でコピーした接続文字列を貼り付け  
-    - **AZURE_STORAGE_ACCOUNT_NAME**: ストレージアカウント名  
-    - **BLOB_STORAGE_CONTAINER_NAME**: `claim-photos`（先ほど作成したコンテナー）  
-    - **BLOB_STORAGE_BASE_URL**: `YOUR-STORAGE-ACCOUNT` を実際のストレージアカウント名に置き換え  
+???+ note "構成メモ"
+    - **SECRET_AZURE_STORAGE_CONNECTION_STRING**: Azure Portal からコピーした接続文字列
+    - **AZURE_STORAGE_ACCOUNT_NAME**: ストレージアカウント名
+    - **BLOB_STORAGE_CONTAINER_NAME**: `claim-photos` 固定
+    - **BLOB_STORAGE_BASE_URL**: `YOUR-STORAGE-ACCOUNT` を実際のストレージアカウント名に置換
 
 <cc-end-step lab="baf3" exercise="1" step="3" />
 
-## エクササイズ 2: Vision と Storage サービスの作成
+## 演習 2: Vision と Storage サービスを作成する
 
-続いて、損傷写真の AI ビジョン解析と BLOB ストレージを処理するサービスを作成します。
+AI ビジョン分析と Blob Storage を扱うサービスを作成します。
 
-### 手順 1: VisionService と BlobStorageService を作成
+### Step 1: VisionService と BlobStorageService を作成する
 
-??? note "このコードの概要"
-    **VisionService**: Mistral AI ビジョンモデルで損傷写真を解析  
-    - Azure OpenAI の mistral-medium-2505 デプロイメントに接続  
-    - 画像バイトを受け取り、構造化 JSON の損傷解析結果を生成  
-    - 損傷タイプ、重症度、修理費見積もり、安全上の懸念点、修理推奨を提供  
-    - 解析失敗時のフォールバックロジックを含む  
-    - 一貫した事実ベースの応答のため温度 0.3 を使用  
+??? note "コードの概要"
+    **VisionService**: Mistral AI ビジョンモデルで損傷写真を分析
+    
+    - `mistral-medium-2505` デプロイに接続
+    - 画像バイトを受け取り、構造化された損傷分析 JSON を生成
+    - 損傷タイプ、深刻度、費用見積もり、安全上の懸念、修理推奨を提供
+    - 失敗時のフォールバックロジック
+    - 一貫性のある事実ベース回答のため温度 0.3 を使用
+    
+    **BlobStorageService**: Azure Blob Storage で損傷写真を管理
 
-    **BlobStorageService**: Azure Blob Storage で損傷写真を管理  
-    - 請求番号ごとにタイムスタンプ付きで写真をアップロード  
-    - AI 解析用に写真をダウンロード  
-    - 不要になった写真を削除  
-    - MIME タイプ（JPEG, PNG, GIF, BMP, WebP）を自動検出  
-    - 直接 URL アクセス用にパブリック BLOB アクセスを設定  
+    - 請求番号ごとにタイムスタンプ付きで写真をアップロード
+    - AI 分析用に写真をダウンロード
+    - 不要になった写真を削除
+    - MIME タイプ (JPEG, PNG, GIF, BMP, WebP) を自動検出
+    - 直接 URL アクセス用にパブリック Blob アクセスを設定
+    
+    これは完全な実装で、後から追加するメソッドはありません。
 
-    これは完全な実装であり、後でメソッドを追加する必要はありません。
-
-1️⃣ `src/Services/VisionService.cs` に新しいファイルを作成し、次の実装を追加します:
+1️⃣ `src/Services/VisionService.cs` を新規作成し、完全な実装を追加:
 
 ```csharp
 using Azure;
@@ -341,7 +345,7 @@ public class DamageAnalysisResult
 
 
 
-2️⃣ `src/Services/BlobStorageService.cs` に新しいファイルを作成し、次の実装を追加します:
+2️⃣ `src/Services/BlobStorageService.cs` を新規作成し、完全な実装を追加:
 
 ```csharp
 using Azure.Storage.Blobs;
@@ -456,18 +460,18 @@ public class BlobStorageService
 
 <cc-end-step lab="baf3" exercise="2" step="1" />
 
-## エクササイズ 3: KnowledgeBaseService をビジョン機能で拡張
+## 演習 3: KnowledgeBaseService をビジョン機能で拡張する
 
-VisionPlugin を作成する前に、KnowledgeBaseService にメソッドを追加します。これにより、プラグイン作成時にすべての依存関係が存在するようになります。
+VisionPlugin を作成する前に、KnowledgeBaseService にプラグインが使用するメソッドを追加します。これによりプラグイン作成時の依存関係が満たされます。
 
-### 手順 1: KnowledgeBaseService コンストラクターの更新
+### Step 1: KnowledgeBaseService コンストラクターを更新する
 
 ??? note "変更点"
-    KnowledgeBaseService のコンストラクターが、損傷写真アップロード用のオプション引数として BlobStorageService を受け取るようになります。Lab BAF2 でコンストラクターは IConfiguration だけを取るように簡略化されていましたが、今回はそれに BlobStorageService を追加します。
+    KnowledgeBaseService コンストラクターに、損傷写真をアップロードするためのオプションの BlobStorageService パラメーターを追加します。コンストラクターはラボ BAF2 ですでに IConfiguration のみを受け取るよう簡略化されており、今回は BlobStorageService を追加するだけです。
 
-1️⃣ `src/Services/KnowledgeBaseService.cs` を開きます。  
+1️⃣ `src/Services/KnowledgeBaseService.cs` を開きます。
 
-2️⃣ `KnowledgeBaseService` のコンストラクターを探し、以下のコードブロックに置き換えて BlobStorageService フィールドとコンストラクター引数を追加します:
+2️⃣ `KnowledgeBaseService` コンストラクターを見つけ、以下のコードブロックに置き換えます:
 
 ```csharp
 private readonly BlobStorageService? _blobStorageService;
@@ -499,28 +503,29 @@ public KnowledgeBaseService(IConfiguration configuration, BlobStorageService? bl
 ```
 
 ??? note "コンストラクターの変更"
-    コンストラクターはオプションで BlobStorageService を受け取り、データインデックス作成時に損傷写真を Azure Blob Storage にアップロードするために使用します。
+    コンストラクターはオプションの BlobStorageService パラメーターを受け取り、データインデックス時に損傷写真を Azure Blob Storage へアップロードするために使用します。
 
 <cc-end-step lab="baf3" exercise="3" step="1" />
 
-### 手順 2: ビジョン関連メソッドの追加
+### Step 2: ビジョン関連メソッドを追加する
 
-??? note "このコードの概要"
-    **GetClaimImageUrlAsync**: claims インデックスに対して imageUrl フィールドのみを直接クエリし、シンプルな検索を高速化。NULL 可能な文字列を返します。  
+??? note "コードの概要"
+    **GetClaimImageUrlAsync**: imageUrl フィールドを直接検索インデックスから取得。単純なフィールド取得には RetrieveAsync より効率的。nullable string を返す。
+    
+    **UploadSampleDamagePhotosAsync**: 写真アップロードの完全ワークフロー
 
-    **UploadSampleDamagePhotosAsync**: 写真アップロードの完全なワークフロー  
-    - JSON ファイルから請求を読み込み  
-    - policyholder 名パターン (firstname-lastname-*.jpg) で画像をマッチング  
-    - Blob Storage に請求番号ごとに写真をアップロード  
-    - claim-documents-index に検索可能ドキュメントを作成  
-    - claims インデックスの imageUrl フィールドを更新  
-    - 初回起動時に自動実行  
+    - JSON ファイルから請求を読み込み
+    - policyholder 名のパターン (firstname-lastname-*.jpg) で画像をマッチ
+    - Blob Storage に請求番号ごとにアップロード
+    - claim-documents-index に検索可能ドキュメントを作成
+    - claims インデックスを imageUrl フィールドで更新
+    - 初回起動時に自動実行
+    
+    これにより 35 枚のサンプル損傷写真がすぐにアップロード・インデックス化されます。
 
-    これにより、35 枚のサンプル損傷写真が即座にアップロード・インデックス化されます。
+`KnowledgeBaseService` クラスの終了直前に、以下の 2 つの新メソッドを追加します:
 
-`KnowledgeBaseService` クラスの末尾（閉じ括弧の直前）に、次の 2 つのメソッドを追加します:
-
-**GetClaimImageUrlAsync メソッド** - claims インデックスから直接 imageUrl を取得:
+**GetClaimImageUrlAsync メソッド** - 請求インデックスから画像 URL を直接取得:
 
 ```csharp
 /// <summary>
@@ -557,7 +562,7 @@ public async Task<string?> GetClaimImageUrlAsync(string claimNumber)
 ```
 
 ??? note "RetrieveAsync を使わない理由"
-    シンプルなフィールド取得のみの場合は Knowledge Base の RetrieveAsync API よりも、検索インデックスへ直接クエリするほうが効率的です。
+    シンプルなフィールド取得のみの場合、Knowledge Base の RetrieveAsync API を使うよりも検索インデックスを直接クエリする方が効率的です。
 
 **UploadSampleDamagePhotosAsync メソッド** - `infra/img/sample-images` から損傷写真をアップロードする完全実装:
 
@@ -673,25 +678,25 @@ private async Task UploadSampleDamagePhotosAsync()
 }
 ```
 
-??? note "このコードの詳細"
-    `UploadSampleDamagePhotosAsync` は写真アップロード機能を提供します:  
-    - **請求データ読み込み**: `infra/data/sample-data/claims.json` からすべての請求を読み込み  
-    - **画像マッチング**: `infra/img/sample-images` で policyholder 名パターンに一致する画像を検索  
-    - **Blob Storage にアップロード**: 画像を請求番号フォルダーにアップロード  
-    - **請求を更新**: claims-index の各レコードに imageUrl フィールドをマージ  
-    - **自動実行**: IndexSampleDataAsync 実行時に呼び出されます  
-
-    これにより、  
-    - ✅ 画像が永続的に Blob Storage へアップロード  
-    - ✅ claims インデックスに imageUrl が追加され直接参照可能  
-    - ✅ 画像は即座に AI ビジョン解析で利用可能  
-    になります。
+??? note "コードの詳細"
+    `UploadSampleDamagePhotosAsync` は以下を行います:
+    
+    - **請求データの読み込み**: `infra/data/sample-data/claims.json` から全請求を読み込み
+    - **画像マッチング**: `infra/img/sample-images` で policyholder 名パターンに一致する画像を検索
+    - **Blob Storage へアップロード**: BlobStorageService を使用し請求番号階層で各画像をアップロード
+    - **請求更新**: 既存の請求レコードに imageUrl フィールドをマージし `claims-index` を更新
+    - **自動実行**: IndexSampleDataAsync 呼び出し時に実行
+    
+    これにより:
+    - ✅ 画像を永続的に保存
+    - ✅ claims インデックスに imageUrl を追加
+    - ✅ 画像が即座にビジョン分析可能
 
 <cc-end-step lab="baf3" exercise="3" step="2" />
 
-### 手順 3: IndexSampleDataAsync メソッドを更新
+### Step 3: IndexSampleDataAsync メソッドを更新する
 
-`IndexSampleDataAsync` メソッドを見つけ、写真アップロード呼び出しを追加した下記コードに置き換えます:
+`IndexSampleDataAsync` メソッドを見つけ、写真アップロード呼び出しを追加する以下のコードに更新します:
 
 ```csharp
 public async Task IndexSampleDataAsync()
@@ -710,22 +715,23 @@ public async Task IndexSampleDataAsync()
 
 <cc-end-step lab="baf3" exercise="3" step="3" />
 
-## エクササイズ 4: Vision プラグインの作成
+## 演習 4: Vision プラグインを作成する
 
-KnowledgeBaseService に必要なメソッドを追加したので、それらを利用する VisionPlugin を作成します。
+KnowledgeBaseService に必要なメソッドが追加されたので、これらを使用する VisionPlugin を作成します。
 
-### 手順 1: 完全な VisionPlugin を作成
+### Step 1: 完全な VisionPlugin を作成する
 
-??? note "このコードの概要"
-    `VisionPlugin` は AI ビジョン解析機能を提供します:  
-    - **ShowDamagePhoto**: 損傷写真を取得してチャット内で表示  
-    - **AnalyzeAndShowDamagePhoto**: 画像をダウンロードし、Mistral AI で解析し結果を表示  
-    - **ApproveAnalysis/RejectAnalysis**: AI 解析への承認ワークフロー  
-    - **NotifyUserAsync**: 長時間処理中のリアルタイムストリーミング更新  
+??? note "コードの概要"
+    `VisionPlugin` は AI ビジョン分析機能を提供します:
+    
+    - **ShowDamagePhoto**: 請求から損傷写真を取得し、チャット内で表示
+    - **AnalyzeAndShowDamagePhoto**: 写真をダウンロードし、Mistral AI で分析。構造化結果を抽出し、フォーマットして提示
+    - **ApproveAnalysis / RejectAnalysis**: AI 分析に対するユーザー承認フローを処理（本番では DB 更新やワークフローをトリガー）
+    - **NotifyUserAsync**: 長時間処理中のリアルタイムストリーミング更新用ヘルパー
+    
+    各メソッドは `[Description]` 属性を持ち、AI エージェントがユーザーの意図に応じて呼び出せるようにします。
 
-    各メソッドには `[Description]` 属性が付いており、エージェントはユーザー意図に応じて呼び出します。
-
-1️⃣ `src/Plugins/VisionPlugin.cs` に新しいファイルを作成し、次の実装を追加します:
+1️⃣ `src/Plugins/VisionPlugin.cs` を新規作成し、完全な実装を追加:
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -970,16 +976,16 @@ namespace ZavaInsurance.Plugins
 
 <cc-end-step lab="baf3" exercise="4" step="1" />
 
-## エクササイズ 5: ClaimsPlugin を更新し損傷写真を表示
+## 演習 5: ClaimsPlugin で損傷写真を表示する
 
-### 手順 1: ClaimsPlugin を写真表示対応に更新
+### Step 1: ClaimsPlugin を更新して損傷写真を表示する
 
-??? note "このコードの概要"
-    KnowledgeBaseService に `GetClaimImageUrlAsync` が追加されたため、ClaimsPlugin に画像表示機能を復活させます。
+??? note "コードの概要"
+    `GetClaimImageUrlAsync` が利用可能になったため、ClaimsPlugin を更新して請求詳細に損傷写真を表示できるようにします。ラボ BAF2 で削除していた画像表示機能を復活させます。
 
-1️⃣ `src/Plugins/ClaimsPlugin.cs` を開きます。  
+1️⃣ `src/Plugins/ClaimsPlugin.cs` を開きます。
 
-2️⃣ `GetClaimDetails` メソッド内の次のセクションを探します:
+2️⃣ `GetClaimDetails` メソッドを見つけ、終盤付近の以下の部分を探します:
 
 ```csharp
             result.AppendLine("**Documentation Status:**");
@@ -1029,24 +1035,27 @@ namespace ZavaInsurance.Plugins
             return result.ToString();
 ```
 
-??? note "更新が必要な理由"
-    Lab BAF2 では `GetClaimImageUrlAsync` が存在しなかったため画像表示コードを省いていました。Exercise 3 でメソッドが追加されたので復活させます。
+??? note "更新理由"
+    ラボ BAF2 では `GetClaimImageUrlAsync` が存在しなかったため画像表示を省略していました。Exercise 3 で追加したので、ここで機能を復元します。
 
 <cc-end-step lab="baf3" exercise="5" step="1" />
 
-## エクササイズ 6: サービス登録とエージェント設定の更新
+## 演習 6: サービス登録とエージェント構成を更新する
 
-Program.cs とエージェント設定を更新し、すべてを連携させます。
+すべてを結び付けるために、Program.cs とエージェント構成を更新します。
 
-### 手順 1: サービス登録と KnowledgeBaseService ファクトリの更新
+### Step 1: サービス登録と KnowledgeBaseService ファクトリを更新する
 
-??? note "このコードの概要"
-    - **サービス登録**: BlobStorageService（シングルトン）と VisionService（スコープ）を DI に登録  
-    - **KnowledgeBaseService ファクトリ**: BlobStorageService を簡略化したコンストラクターに渡す  
+??? note "コードの概要"
 
-1️⃣ `src/Program.cs` を開きます。  
+    - **サービス登録**: BlobStorageService（シングルトン）と VisionService（スコープ）を DI に登録
+    - **KnowledgeBaseService ファクトリ**: BlobStorageService を簡略化されたコンストラクターへ渡すよう更新
+    
+    ファクトリパターンで適切なサービス解決と初期化順序を保証します。
 
-2️⃣ `builder.Services.AddSingleton<KnowledgeBaseService>();` を探し、次の登録ブロックに置き換えます:
+1️⃣ `src/Program.cs` を開きます。
+
+2️⃣ `builder.Services.AddSingleton<KnowledgeBaseService>();` を見つけ、以下の登録ブロックに置き換えます:
 
 ```csharp
 // Register Blob Storage Service for damage photo uploads
@@ -1066,22 +1075,25 @@ builder.Services.AddSingleton<KnowledgeBaseService>(serviceProvider =>
 ```
 
 ??? note "簡略化されたコンストラクター"
-    変更後の `KnowledgeBaseService` コンストラクターは以下を受け取ります:  
-    - **IConfiguration**  
-    - **BlobStorageService**（オプション）  
+    更新後の `KnowledgeBaseService` コンストラクターは以下を受け取ります:
+    
+    - **IConfiguration**: 接続文字列やエンドポイント
+    - **BlobStorageService**: 損傷写真アップロード用（オプション）
+    
+    サービス内部で SearchIndexClient、KnowledgeBaseRetrievalClient、AzureOpenAIClient を生成し、依存を簡素化します。
 
 <cc-end-step lab="baf3" exercise="6" step="1" />
 
-### 手順 2: エージェントに VisionPlugin を追加
+### Step 2: エージェントに VisionPlugin を追加する
 
-??? note "このコードの概要"
-    - **AgentInstructions**: VisionPlugin ツールを含むようシステムプロンプトを更新  
-    - **プラグイン生成**: VisionPlugin をインスタンス化し依存関係を注入  
-    - **ツール登録**: Vision 関連ツールをエージェントに追加  
+??? note "コードの概要"
+    **Agent Instructions**: システムプロンプトを更新し VisionPlugin のツール (ShowDamagePhoto, AnalyzeAndShowDamagePhoto, ApproveAnalysis) を追加  
+    **Plugin 作成**: 必要な依存関係 (context, knowledge base, vision service, blob storage, configuration) を用いて VisionPlugin をインスタンス化  
+    **Tool 登録**: 4 つのビジョンツールをエージェントの機能セットに追加
 
-1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。  
+1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ `AgentInstructions` プロパティを次の内容に置き換えます:
+2️⃣ `AgentInstructions` プロパティを見つけ、以下で置き換えます:
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -1102,7 +1114,7 @@ Be concise and professional in your responses.
 """;
 ```
 
-3️⃣ `GetClientAgent` メソッドでサービスを解決している箇所（`var knowledgeBaseService = ...` の後）に次を追加します:
+3️⃣ `GetClientAgent` メソッド内で、`var knowledgeBaseService = ...` の後に以下を追加:
 
 ```csharp
 // Resolve vision and storage services
@@ -1110,14 +1122,14 @@ var visionService = scope.ServiceProvider.GetRequiredService<VisionService>();
 var blobStorageService = scope.ServiceProvider.GetRequiredService<BlobStorageService>();
 ```
 
-4️⃣ `ClaimsPlugin claimsPlugin = new(...)` の直後に次を追加します:
+4️⃣ `ClaimsPlugin claimsPlugin = new(...)` の直後に以下を追加:
 
 ```csharp
 // Create VisionPlugin with all dependencies
 VisionPlugin visionPlugin = new(context, knowledgeBaseService, visionService, blobStorageService, configuration);
 ```
 
-5️⃣ `toolOptions.Tools` にツールを追加している部分に Vision ツールを追加します:
+5️⃣ `toolOptions.Tools` にツールを追加している箇所を見つけ、ビジョンツールを追加:
 
 ```csharp
 // Register Vision tools for AI damage photo analysis
@@ -1129,16 +1141,16 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(visionPlugin.RejectAnalysis));
 
 <cc-end-step lab="baf3" exercise="6" step="2" />
 
-### 手順 3: 画像プロキシエンドポイントの追加
+### Step 3: 画像プロキシエンドポイントを追加する
 
 ??? note "必要な理由"
-    Microsoft 365 Copilot はネットワーク制限により直接 Azure Blob Storage URL にアクセスできません。画像をチャット内で表示するには、ボットの devtunnel エンドポイント経由でプロキシする必要があります。
+    Microsoft 365 Copilot はネットワーク制限により Azure Blob Storage の URL へ直接アクセスできません。画像をチャット内で表示するため、ボットの devtunnel 経由で `/api/image` エンドポイントからプロキシする必要があります。
 
-1️⃣ `src/Program.cs` を開きます。  
+1️⃣ `src/Program.cs` を開きます。
 
-2️⃣ `app.MapControllers()` が呼び出されている箇所（ファイル末尾付近、`app.Run()` の前）を探します。  
+2️⃣ `app.MapControllers()` がある箇所を探します（ファイル終盤、`app.Run()` の前）。
 
-3️⃣ `app.MapGet("/api/citation"` マッピングの **後** に画像プロキシエンドポイントを追加します:
+3️⃣ `app.MapGet("/api/citation"` の **後ろ** に画像プロキシエンドポイントを追加します:
 
 ```csharp
 app.MapGet("/api/image", async (string url) =>
@@ -1158,21 +1170,22 @@ app.MapGet("/api/image", async (string url) =>
 ```
 
 ??? note "プロキシの仕組み"
-    1. VisionPlugin が ShowDamagePhoto を呼び出し、BLOB URL を取得  
-    2. プロキシ URL（`/api/image?url=...`）を生成  
-    3. Copilot がボットエンドポイントにリクエスト  
-    4. ボットが BLOB から画像を取得し返却  
-    5. 画像がチャット内でインライン表示  
+    1. VisionPlugin が ShowDamagePhoto を呼び出し請求番号を指定  
+    2. knowledge base から Blob Storage URL を取得 (例: `https://storage.blob.core.windows.net/claim-photos/image.jpg`)  
+    3. プロキシ URL を構築: `https://your-devtunnel.devtunnels.ms/api/image?url=<escaped-blob-url>`  
+    4. Copilot がボットエンドポイントへリクエスト  
+    5. ボットが Blob Storage から画像を取得し返却  
+    6. チャット内で画像が表示
 
 <cc-end-step lab="baf3" exercise="6" step="3" />
 
-### 手順 4: StartConversationPlugin の歓迎メッセージを更新
+### Step 4: StartConversationPlugin のウェルカムメッセージを更新する
 
-ビジョン解析機能を追加したので、歓迎メッセージを更新します。
+ビジョン分析機能を追加したため、ウェルカムメッセージも更新します。
 
-1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。  
+1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。
 
-2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を次で置き換えます:
+2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を以下に置き換えます:
 
 ```csharp
 var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
@@ -1191,22 +1204,22 @@ var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
                     "Ready to help with your claims investigation. What would you like to start with?";
 ```
 
-??? note "機能追加に伴う更新"
-    歓迎メッセージにビジョン解析機能（損傷写真の表示と Mistral による AI 解析）を追加しました。各ラボでメッセージを段階的に更新します。
+??? note "段階的な機能アップデート"
+    ウェルカムメッセージにビジョン分析機能 (損傷写真表示と Mistral による AI 分析) を追加しました。各ラボの進行に合わせてメッセージを更新します。
 
 <cc-end-step lab="baf3" exercise="6" step="4" />
 
-## エクササイズ 7: ビジョン解析をテスト
+## 演習 7: ビジョン分析をテストする
 
-ビジョン解析機能をテストしてみましょう！
+ビジョン分析機能をテストしましょう。
 
-### 手順 1: エージェントを実行
+### Step 1: エージェントを実行する
 
-1️⃣ VS Code で **F5** を押してデバッグを開始します。  
+1️⃣ VS Code で **F5** を押してデバッグを開始します。
 
-2️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。  
+2️⃣ プロンプトが出たら **(Preview) Debug in Copilot (Edge)** を選択します。
 
-3️⃣ ターミナル出力を確認し、次のように表示されることを確認します:
+3️⃣ ターミナル出力を確認し、次のような表示を確認します:
 
 ```
 🔍 Initializing Azure AI Search Knowledge Base...
@@ -1226,32 +1239,36 @@ var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
 ✅ Sample data indexed successfully
 ```
 
-4️⃣ **Blob Storage を確認**（任意推奨）:  
-   - [Azure Portal](https://portal.azure.com){target=_blank} → ストレージアカウント  
-   - **Containers** → **claim-photos**  
-   - 35 枚の画像が請求番号ごとにアップロードされていることを確認  
+4️⃣ **Blob Storage を確認**（任意だが推奨）:
 
-5️⃣ **Azure AI Search Knowledge Sources を確認**（任意推奨）:  
-   - [Azure Portal](https://portal.azure.com){target=_blank} → Azure AI Search サービス  
-   - **Agentic retrieval** → 左メニューの **Knowledge Sources**  
-   - `claims-knowledge-source` が表示されていることを確認  
+- [Azure Portal](https://portal.azure.com){target=_blank} → ストレージアカウントへ
+- **Containers** → **claim-photos** を選択
+- 35 枚の画像が請求番号ごとにアップロードされていることを確認
+- 各画像は直接アクセス可能なパブリック Blob URL を持つ
 
-6️⃣ ブラウザーが開き、Microsoft 365 Copilot が起動します。エージェントは前回のラボで既にインストール済みです。
+5️⃣ **Azure AI Search Knowledge Sources を確認**（任意だが推奨）:
+
+- [Azure Portal](https://portal.azure.com){target=_blank} → Azure AI Search サービスを検索
+- **Agentic retrieval** → 左メニューの **Knowledge Sources**
+- `claims-knowledge-source` が表示されていることを確認
+- これが請求インデックスを Knowledge Base に接続し AI 検索を可能にします
+
+6️⃣ ブラウザーが開き、Microsoft 365 Copilot が起動します。前のラボでエージェントはすでにインストール済みです。
 
 <cc-end-step lab="baf3" exercise="7" step="1" />
 
-### 手順 2: 損傷写真の表示をテスト
+### Step 2: 損傷写真の表示をテストする
 
-1️⃣ Microsoft 365 Copilot で次を入力します:
+1️⃣ Microsoft 365 Copilot で次を試します:
 
 ```text
 Show me the damage photo for claim CLM-2025-001007
 ```
 
-エージェントは `ShowDamagePhoto` ツールを使用し、損傷写真を表示します。
+エージェントは `ShowDamagePhoto` ツールを使用し、損傷写真を表示するはずです。
 
 ???+ note "画像読み込み時間"
-    画像は Azure Blob Storage からボットエンドポイント経由でプロキシされるため、チャットに表示されるまで数秒かかることがあります。
+    画像は Azure Blob Storage からボットエンドポイント経由でプロキシされるため、チャット内で読み込まれるまで数秒かかる場合があります。正常な動作です。
 
 2️⃣ 別の請求を試します:
 
@@ -1261,7 +1278,7 @@ View the damage photo for claim CLM-2025-001003
 
 <cc-end-step lab="baf3" exercise="7" step="1" />
 
-### 手順 2: AI ビジョン解析をテスト
+### Step 2: AI ビジョン分析をテストする
 
 1️⃣ 次を試します:
 
@@ -1269,55 +1286,43 @@ View the damage photo for claim CLM-2025-001003
 Analyze the damage photo for claim CLM-2025-001007
 ```
 
-エージェントは以下を実行します:  
-- `AnalyzeAndShowDamagePhoto` ツールを使用  
-- 画像をダウンロードして Mistral AI で解析  
-- 損傷タイプ、重症度、修理費見積もり、推奨事項など詳細を提示  
-- 承認または却下を求めるプロンプトを表示  
+エージェントは以下を行います:
+- `AnalyzeAndShowDamagePhoto` ツールを使用
+- 画像をダウンロードして Mistral AI で分析
+- 損傷タイプ、深刻度、費用見積もり、推奨事項を含む詳細分析を提示
+- 承認または拒否を求める
 
-2️⃣ 解析を確認した後、次を試します:
+2️⃣ 分析を確認後、次を試します:
 
 ```text
 Approve the analysis
 ```
 
-エージェントは `ApproveAnalysis` を使用し、承認と次のステップを通知します。
+エージェントは `ApproveAnalysis` を使用し、承認と次のステップを確認するはずです。
 
 <cc-end-step lab="baf3" exercise="7" step="2" />
 
-### 手順 3: 複合ワークフローをテスト
-
-1️⃣ 次を試します:
-
-```text
-Show me high severity claims in the Northeast region, then analyze their damage photos
-```
-
-エージェントはまず請求を検索し、その後該当する請求の損傷写真を解析します。
-
-<cc-end-step lab="baf3" exercise="7" step="3" />
-
 ## 🎉 おめでとうございます！
 
-保険エージェントに AI ビジョン解析を正常に追加できました！ 
+AI ビジョン分析を保険エージェントに追加できました！
 
-**達成したこと:**  
+**達成したこと:**
 
 ✅ Mistral medium-2505 ビジョンモデルをデプロイ  
-✅ 画像解析用 VisionService を作成  
+✅ 画像分析用の VisionService を作成  
 ✅ 複数のビジョン機能を持つ VisionPlugin を構築  
 ✅ 構造化出力による AI 損傷評価を実装  
-✅ AI 解析結果の承認ワークフローを追加  
+✅ AI 生成分析の承認ワークフローを追加  
 
-**エージェントができること:**  
+**エージェントができること:**
 
-- 請求の損傷写真を表示  
-- マルチモーダル AI で写真を解析  
-- 損傷タイプ、重症度、修理費を抽出  
-- 安全上の懸念点を特定し修理を推奨  
-- AI 解析の承認ワークフローを提供  
+- 請求の損傷写真を表示
+- マルチモーダル AI で写真を分析
+- 損傷タイプ、深刻度、費用見積もりを抽出
+- 安全上の懸念を特定し修理を推奨
+- AI 分析の承認ワークフローを提供
 
-次のラボでは、認証とメール機能を追加し、エージェントのセキュリティと通信機能を強化します。
+次のラボでは、認証とメール機能を追加し、エージェントのセキュリティとコミュニケーション機能を強化します。
 
 <cc-next url="../04-add-policy-search" />
 

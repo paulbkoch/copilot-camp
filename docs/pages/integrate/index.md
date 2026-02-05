@@ -85,12 +85,12 @@ Below are various labs to integrate your agents for Microsoft 365 Copilot with e
     - [Lab MCS9 - Connected Agents](../make/copilot-studio/09-connected-agents)
     - [Lab MCS10 - Consuming an MCP Server with OAuth 2.0](../make/copilot-studio/10-mcp-oauth)
 - Declarative Agents
-    - [Lab 08 - Connect Declarative agent to MCP Server](../extend-m365-copilot/08-mcp-server)
+    - [Lab E08 - Connect Declarative agent to MCP Server](../extend-m365-copilot/08-mcp-server)
     - [Lab E09 - Connected Agents - Zava's Multi-Agent Claims Orchestration](../extend-m365-copilot/09-connected-agent)
     - [Lab E10 - Connect Declarative Agent to OAuth-Protected MCP Server](../extend-m365-copilot/10-mcp-auth)
 - Custom Engine Agents
     - [Lab BAF06 - Add Microsoft 365 Work IQ API Integration](../custom-engine/agent-framework/06-add-copilot-api)
-    - [Lab BAF07 - dd MCP Tools Integration](../custom-engine/agent-framework/07-add-mcp-tools)
+    - [Lab BAF07 - Add MCP Tools Integration](../custom-engine/agent-framework/07-add-mcp-tools)
 
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/integrate/index" />

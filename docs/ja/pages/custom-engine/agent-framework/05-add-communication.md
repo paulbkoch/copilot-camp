@@ -2,46 +2,46 @@
 search:
   exclude: true
 ---
-# ラボ BAF5 - 通信機能の追加
+# ラボ BAF5 - コミュニケーション機能の追加
 
-このラボでは、Zava Insurance エージェントにプロフェッショナルな通信機能を追加します。Microsoft Graph を使用して詳細な請求レポートをメール送信し、ビジョン解析結果と不正検知データを含む包括的な調査レポートを生成できるようにします。
+このラボでは、Zava Insurance エージェントにプロフェッショナルなコミュニケーション機能を追加します。Microsoft Graph を使用して詳細な請求レポートをメール送信し、ビジョン解析結果や不正検知データを含む包括的な調査レポートを生成できるようにします。
 
-???+ info "CommunicationPlugin の概要"
-    **CommunicationPlugin** を使用すると、エージェントは次のことができます。
+???+ info "CommunicationPlugin を理解する"
+    **CommunicationPlugin** によりエージェントは次のことが可能になります。
     
-    - **プロフェッショナルなメール送信**: Microsoft Graph Mail API を用いて HTML 形式の請求詳細を送信  
-    - **調査レポートの生成**: ClaimsPlugin、VisionPlugin、PolicyPlugin のデータを組み合わせた包括的なレポートを生成  
+    - **プロフェッショナルなメール送信**: Microsoft Graph Mail API を使用し、HTML 形式の請求詳細を送信  
+    - **調査レポートの生成**: ClaimsPlugin、VisionPlugin、PolicyPlugin のデータを統合した包括的レポートを作成  
     - **ナレッジベースの集約**: ビジョン解析、不正検知、ポリシー詳細を含むすべての請求データを取得  
-    - **OAuth トークン管理**: 安全な Graph API 呼び出しのためにキャッシュされた On-Behalf-Of ( OBO ) トークンを使用
+    - **OAuth トークン管理**: キャッシュされた On-Behalf-Of (OBO) トークンで安全に Graph API を呼び出し
     
-    これにより、請求処理ワークフローが通信とレポート機能で完成します。
+    これにより、コミュニケーションとレポート機能が加わり、請求処理ワークフローが完成します。
 
-## 演習 1: CommunicationPlugin の作成
+## Exercise 1: CommunicationPlugin の作成
 
-請求検索、ビジョン解析、ポリシー検索機能が揃ったので、レポートとメールを送信できる通信機能を追加しましょう。
+請求検索、ビジョン解析、ポリシー検索機能がそろったので、レポート送信とメール送信のコミュニケーション機能を追加しましょう。
 
-### 手順 1: 完全な CommunicationPlugin の作成
+### Step 1: CommunicationPlugin を完成させる
 
-??? note "このプラグインが行うこと"
-    `CommunicationPlugin` は 2 つの主要な機能を提供します。
+??? note "このプラグインの役割"
+    `CommunicationPlugin` は 2 つの主要機能を提供します。
     
     **SendClaimDetailsByEmail**:
     
-    - Knowledge Base Service から包括的な請求データを取得  
-    - プロフェッショナルな HTML 形式のメールを作成  
-    - Microsoft Graph API で送信  
-    - 認証にはキャッシュされた OAuth トークンを使用  
-    - 受信者が指定されていなければ現在のユーザーのメールを既定で使用  
+    - Knowledge Base Service から包括的な請求データを取得
+    - プロフェッショナルな HTML 形式のメールを作成
+    - Microsoft Graph API で送信
+    - 認証にはキャッシュ済み OAuth トークンを使用
+    - 宛先が指定されていない場合は現在のユーザーのメールアドレスを既定値として使用
     
     **GenerateInvestigationReport**:
     
-    - ビジョン解析と不正検知を含むすべての請求データを収集  
-    - 推奨事項を含む包括的な調査レポートを整形  
-    - プロフェッショナルな構成のマークダウンレポートを返す  
+    - ビジョン解析と不正検知を含むすべての請求データを収集
+    - 推奨事項を含む包括的な調査レポートをフォーマット
+    - プロフェッショナルな構成の markdown でレポートを返却
     
-    両メソッドとも **KnowledgeBaseService** をカスタム命令付きで利用し、請求データを取得・統合します。
+    どちらのメソッドも **KnowledgeBaseService** をカスタム指示とともに利用し、請求データを取得・統合します。
 
-1️⃣ `src/Plugins/CommunicationPlugin.cs` に新しいファイルを作成し、以下の完全実装を追加します:
+1️⃣ `src/Plugins/CommunicationPlugin.cs` に新しいファイルを作成し、以下の完全実装を追加します。
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -315,32 +315,36 @@ namespace ZavaInsurance.Plugins
 
 <cc-end-step lab="baf5" exercise="1" step="1" />
 
-## 演習 2: Agent で CommunicationPlugin を登録
+## Exercise 2: Agent への CommunicationPlugin の登録
 
 次に、ZavaInsuranceAgent に CommunicationPlugin を組み込みます。
 
-### 手順 1: CommunicationPlugin のインスタンス化
+### Step 1: CommunicationPlugin のインスタンス化
 
-1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。  
+1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ `GetClientAgent` メソッド (約 159 行目) を探します。  
+2️⃣ `GetClientAgent` メソッド（約 159 行目）を探します。
 
-3️⃣ プラグインがインスタンス化されている箇所 ( `PolicyPlugin policyPlugin = ...` の後) を見つけます。  
+3️⃣ プラグインがインスタンス化されている箇所（`PolicyPlugin policyPlugin = ...` の後）を見つけます。
 
-4️⃣ CommunicationPlugin のインスタンス化を追加します:
+4️⃣ CommunicationPlugin をインスタンス化するコードを追加します。
 
 ```csharp
+
+// Get HttpClient for API calls
+var httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+var httpClient = httpClientFactory.CreateClient();
 // Create CommunicationPlugin with required dependencies
 CommunicationPlugin communicationPlugin = new(context, turnState, knowledgeBaseService, httpClient);
 ```
 
 <cc-end-step lab="baf5" exercise="2" step="1" />
 
-### 手順 2: Communication ツールを登録
+### Step 2: Communication ツールの登録
 
-同じ `GetClientAgent` メソッド内で、`toolOptions.Tools` にツールを追加している箇所 (約 180 行目) までスクロールします。
+同じ `GetClientAgent` メソッド内で、`toolOptions.Tools` にツールを追加している場所（約 180 行目）までスクロールします。
 
-Policy ツールセクションを見つけ、その直後に Communication ツールを追加します:
+Policy ツールのセクションを見つけ、その直後に Communication ツールを追加します。
 
 ```csharp
 // Register Communication tools
@@ -348,20 +352,20 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(communicationPlugin.SendClaimDeta
 toolOptions.Tools.Add(AIFunctionFactory.Create(communicationPlugin.GenerateInvestigationReport));
 ```
 
-??? note "ツール登録パターン"
-    エージェントは **AIFunctionFactory** を使用してプラグインメソッドを AI ツールとして登録します。各メソッドの `[Description]` 属性がツール説明となり、LLM がいつ呼び出すかを判断する際に役立ちます。
+??? note "ツール登録のパターン"
+    エージェントは **AIFunctionFactory** を使ってプラグインメソッドを AI ツールとして登録します。各メソッドの `[Description]` 属性がツールの説明となり、LLM がいつ呼び出すべきかを判断する手がかりになります。
 
 <cc-end-step lab="baf5" exercise="2" step="2" />
 
-## 演習 3: エージェントの命令とセキュリティを更新
+## Exercise 3: Agent の指示とセキュリティの更新
 
-通信機能を含むようにエージェントの命令を更新し、ユーザー認証と OBO トークンサポートを有効にします。
+エージェントの指示にコミュニケーション機能を追加し、ユーザー認証と OBO トークンをサポートするためのセキュリティ設定を更新します。
 
-### 手順 1: 命令に Communication ツールを追加
+### Step 1: 指示に Communication ツールを追加
 
-1️⃣ `src/Agent/ZavaInsuranceAgent.cs` で `AgentInstructions` フィールド (約 32 行目) を探します。  
+1️⃣ `src/Agent/ZavaInsuranceAgent.cs` の `AgentInstructions` フィールド（約 32 行目）を探します。
 
-2️⃣ ツール一覧セクションを見つけ、Communication を含むすべてのツールのリストに更新します:
+2️⃣ ツールリストのセクションを見つけ、コミュニケーションツールを含めた全ツールのリストに更新します。
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -387,16 +391,16 @@ Be concise and professional in your responses.
 """;
 ```
 
-??? note "命令を更新する理由"
-    エージェント命令は LLM に各ツールをいつ使うかを指示します。Communication ツールを追加することで、エージェントはメール送信やレポート生成が可能であることを認識します。
+??? note "指示を更新する理由"
+    エージェント指示は LLM に各ツールの使用タイミングを伝えます。コミュニケーションツールを追加することで、エージェントがメール送信やレポート生成を認識し、必要時に呼び出せるようになります。
 
 <cc-end-step lab="baf5" exercise="3" step="1" />
 
-### 手順 2: OBO 設定を構成
+### Step 2: OBO 設定の構成
 
-1️⃣ `m365agents.local.yml` で `OnMessageAsyncfile/createOrUpdateJsonFile` アクション (約 47 行目) を探します。  
+1️⃣ `m365agents.local.yml` で `file/createOrUpdateJsonFile` アクション（約 47 行目）を探します。
 
-2️⃣ `UserAuthorization` グループの `me` 設定をコメント解除し、`OBOConnectionName`、`OBOScopes`、`Title`、`Text` の設定を有効化します。コードは次のようになります:
+2️⃣ `UserAuthorization` グループの設定で `me` 設定をアンコメントし、`OBOConnectionName`、`OBOScopes`、`Title`、`Text` を有効にします。コードは次のようになります。
 
 ```yaml
           UserAuthorization:
@@ -413,16 +417,16 @@ Be concise and professional in your responses.
                   Text: "Sign in to Microsoft Graph"
 ```
 
-??? note "このコードが行うこと"
-    この新しいコードは、エージェントを支える Azure Bot の On-Behalf-Of ( OBO ) フローをサポートする設定を有効にします。
+??? note "このコードの役割"
+    このコードにより、エージェントを支える Azure Bot で On-Behalf-Of (OBO) フローをサポートする設定が有効になります。
  
 <cc-end-step lab="baf5" exercise="3" step="2" />
 
-### 手順 3: ユーザー認証と OBO を実装
+### Step 3: ユーザー認証と OBO の実装
 
-1️⃣ `src/Agent/ZavaInsuranceAgent.cs` で `OnMessageAsync` メソッド (約 87 行目) を探します。  
+1️⃣ `src/Agent/ZavaInsuranceAgent.cs` で `OnMessageAsync` メソッド（約 87 行目）を探します。
 
-2️⃣ メソッドの最初の行 `await turnContext.StreamingResponse.QueueInformativeUpdateAsync( ...` の直後に次のコード抜粋を追加します:
+2️⃣ メソッドの最初の行 `await turnContext.StreamingResponse.QueueInformativeUpdateAsync( ...` の直後に次のコードを追加します。
 
 ```csharp
             // Check if user profile is already cached, if not fetch and cache it
@@ -451,32 +455,32 @@ Be concise and professional in your responses.
             }
 ```
 
-??? note "このコードが行うこと"
-    追加したコードは以下を実施します。
+??? note "このコードの役割"
+    追加したコードは次の処理を担当します。
     
-    - 現在のユーザープロファイルを会話から取得  
-    - キャッシュにユーザープロファイルがない場合  
-        - 現在のユーザーの OBO トークンを取得  
-        - 会話に OBO トークンをキャッシュ  
-        - Microsoft Graph でユーザープロファイルを取得  
-        - 会話にユーザープロファイルをキャッシュ  
-        - エージェントがユーザーのために動作している旨を通知  
+    - 現在のユーザープロファイルを会話から取得
+    - ユーザープロファイルがキャッシュに無い場合
+        - 現在のユーザーの OBO トークンを取得
+        - OBO トークンを現在の会話にキャッシュ
+        - Microsoft Graph でユーザープロファイルを取得
+        - ユーザープロファイルを会話にキャッシュ
+        - エージェントがユーザーのために作業していることを通知
     
-    ユーザープロファイル取得に失敗した場合、ストリーミングでサインインを促します。
+    ユーザープロファイル取得に失敗した場合、エージェントはストリーミングでサインインを促します。
     
 <cc-end-step lab="baf5" exercise="3" step="3" />
 
-## 演習 4: StartConversationPlugin を更新
+## Exercise 4: StartConversationPlugin の更新
 
-ようこそメッセージを更新し、通信機能を含むすべての機能をユーザーに案内します。
+ウェルカムメッセージを更新し、コミュニケーション機能を含むすべての機能をユーザーに案内します。
 
-### 手順 1: ようこそメッセージの更新
+### Step 1: ウェルカムメッセージの更新
 
-1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。  
+1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。
 
-2️⃣ `StartConversation` メソッドを探します。  
+2️⃣ `StartConversation` メソッドを探します。
 
-3️⃣ `welcomeMessage` を完全なワークフローに置き換えます:
+3️⃣ `welcomeMessage` を完全なワークフローに置き換えます。
 
 ```csharp
 var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
@@ -504,42 +508,42 @@ var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
 ```
 
 ??? note "完全なワークフロー"
-    手順 1-10 は最初の検索から最終レポート配布までの請求調査ワークフローを示しています。これは実際のアジャスターが行うプロセスを反映しています。
+    手順 1-10 は、最初の検索から最終レポート配布までの請求調査ワークフロー全体を示しています。これは実際のアジャスターが行うプロセスを反映しています。
 
 <cc-end-step lab="baf5" exercise="4" step="1" />
 
-## 演習 5: 通信機能をテスト
+## Exercise 5: コミュニケーション機能のテスト
 
-では、通信機能をすべてテストしましょう！
+いよいよコミュニケーション機能をテストしましょう！
 
-### 手順 1: 実行と確認
+### Step 1: 実行と確認
 
-1️⃣ VS Code で **F5** を押してデバッグを開始します。  
+1️⃣ VS Code で **F5** を押してデバッグを開始します。
 
-2️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。  
+2️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。
 
-3️⃣ ターミナルには通常の初期化が表示されます (新しいインデックスは作成されません)。  
+3️⃣ ターミナルには通常の初期化メッセージが表示されます（新しいインデックスは作成されません）。
 
-4️⃣ ブラウザーウィンドウが開き、Microsoft 365 Copilot が表示されます。
+4️⃣ ブラウザーが開き、Microsoft 365 Copilot が表示されます。
 
 <cc-end-step lab="baf5" exercise="5" step="1" />
 
-### 手順 2: 調査レポート生成をテスト
+### Step 2: 調査レポート生成のテスト
 
-1️⃣ Microsoft 365 Copilot で次のように話しかけます: 
+1️⃣ Microsoft 365 Copilot で次のように入力します。 
 
 ```text
 Generate investigation report for CLM-2025-001007
 ```
 
-エージェントは以下を実施します。
+エージェントは以下を実行します。
 
-- `CommunicationPlugin.GenerateInvestigationReport` を使用  
-- ナレッジベースから包括的な請求データを取得  
-- ビジョン解析結果 (写真が解析されていれば) を含む  
-- 不正リスク評価を含む  
-- プロフェッショナルなマークダウンで整形  
-- 推奨事項付きの構造化されたレポートを返す  
+- `CommunicationPlugin.GenerateInvestigationReport` を使用
+- ナレッジベースから包括的な請求データを収集
+- ビジョン解析結果（写真が解析済みの場合）を含める
+- 不正リスク評価を含める
+- プロフェッショナルな markdown でレポートをフォーマット
+- 推奨事項付きの構造化レポートを返却
 
 **期待される応答:**
 
@@ -561,28 +565,44 @@ Generate investigation report for CLM-2025-001007
 **Next Steps:** Review findings and proceed with recommended claim resolution action.
 ```
 
-2️⃣ 別の請求でも試してみてください: 
-
-```text
-Generate report for CLM-2024-1003
-```
+!!! warning "OBO トークン構成エラー"
+    メッセージ送信後に次のエラーメッセージが表示された場合:
+    
+    ```
+    Sign in for 'me' completed without a token. Status=Exception/OBO for 'BotServiceConnection' is not setup for exchangeable tokens. For Token Service handlers, the 'Scopes' field on the Azure Bot OAuth Connection should be in the format of 'api://{appid_uri}/{scopeName}'.
+    ```
+    
+    次の手順で修正してください。
+    
+    1. **Azure Portal** にアクセスし、**Azure Bot** を含む **Resource Group** を探す  
+    2. Azure Bot リソースを開き、**Configuration** タブへ  
+    3. **Microsoft Graph** Azure Active Directory v2 サービスプロバイダーをクリック  
+    4. 既存の **Token Exchange URL** と **Scopes** の値をメモ（後で必要）  
+    5. **Token Exchange URL** を `https://graph.microsoft.com` に変更  
+    6. **Scopes** を `email openid profile User.Read Mail.Send` に変更  
+    7. **Save** をクリック  
+    8. 再度 **Microsoft Graph** サービスプロバイダーを選択し **Test Connection** を実行  
+    9. 表示される権限要求で **Grant all consent** を選択  
+    10. 設定画面に戻り、元の **Token Exchange URL** と **Scopes** を復元  
+    11. もう一度 **Save**  
+    12. エージェントに戻り、**ページを更新** して再テスト  
 
 <cc-end-step lab="baf5" exercise="5" step="2" />
 
-### 手順 3: メール送信機能をテスト
+### Step 3: メール機能のテスト
 
-1️⃣ 次のように話しかけます: 
+1️⃣ 次を試してください。 
 
 ```text
 Send claim details for CLM-2025-001007 by email
 ```
 
-エージェントは以下を実施します。
+エージェントは以下を実行します。
 
-- ナレッジベースから請求詳細を取得  
-- HTML 形式のメールを作成  
-- Microsoft Graph API で送信  
-- 受信者としてあなたのメールアドレスを使用 (既定)  
+- ナレッジベースから請求詳細を取得
+- HTML 形式のメールを作成
+- Microsoft Graph API で送信
+- 既定であなたのメールアドレスを宛先に使用
 
 **期待される応答:**
 
@@ -596,9 +616,9 @@ Sending email via Microsoft Graph...
 The email includes comprehensive claim information, documentation status, timeline, and recommendations.
 ```
 
-2️⃣ 受信トレイを確認すると、プロフェッショナルな HTML 形式の請求詳細メールが届いているはずです。  
+2️⃣ メール受信箱を確認し、プロフェッショナルな HTML 形式の請求詳細メールが届いていることを確認します。
 
-3️⃣ 特定の受信者に送信する場合は次のようにします: 
+3️⃣ 特定の宛先を指定して送信: 
 
 ```text
 Send claim details for CLM-2025-001001 to john.doe@contoso.com
@@ -606,9 +626,9 @@ Send claim details for CLM-2025-001001 to john.doe@contoso.com
 
 <cc-end-step lab="baf5" exercise="5" step="3" />
 
-### 手順 4: エンドツーエンドの完全ワークフローをテスト
+### Step 4: 完全なエンドツーエンド ワークフローのテスト
 
-ようこそメッセージから 10 ステップのワークフローをすべてテストします:
+ウェルカムメッセージにある 10 段階のワークフローをテストします。
 
 ```
 1. Get details for claim CLM-2025-001007
@@ -623,29 +643,31 @@ Send claim details for CLM-2025-001001 to john.doe@contoso.com
 10. Send the report by email
 ```
 
-エージェントはすべてのプラグイン (ClaimsPlugin → PolicyPlugin → VisionPlugin → CommunicationPlugin) をシームレスに使用し、フル調査ワークフローを完了します！
+エージェントはすべてのプラグイン (ClaimsPlugin → PolicyPlugin → VisionPlugin → CommunicationPlugin) をシームレスに使用し、調査ワークフローを完了するはずです。
 
 <cc-end-step lab="baf5" exercise="5" step="4" />
 
 ---8<--- "ja/b-congratulations.md"
 
-ラボ BAF5 - 通信機能の追加を完了しました！
+ラボ BAF5 - コミュニケーション機能の追加 が完了しました！
 
-次のことを学習しました。
+学習したこと:
 
-- ✅ メール送信とレポート生成を行う CommunicationPlugin を作成  
-- ✅ プロフェッショナルなメール送信のために Microsoft Graph Mail API を統合  
-- ✅ 集約データによる包括的な調査レポートを生成  
-- ✅ 通信ワークフローを含むようにエージェント命令を更新  
-- ✅ 請求調査のエンドツーエンドワークフローを完全にテスト  
+- ✅ メール送信とレポート生成を行う CommunicationPlugin の作成
+- ✅ Microsoft Graph Mail API を統合してプロフェッショナルなメールを送信
+- ✅ データを集約した包括的な調査レポートを生成
+- ✅ エージェント指示を更新し、コミュニケーションワークフローを追加
+- ✅ 請求調査のエンドツーエンド ワークフローをテスト
 
-あなたの Zava Insurance エージェントは、以下を備えた請求処理の完全ソリューションになりました。
+これで Zava Insurance エージェントは次の機能を備えた完全な請求処理ソリューションになりました。
 
-- **検索**: Azure AI Search による請求とポリシー検索  
-- **解析**: 損害評価のための Mistral ベース AI ビジョン  
+- **検索**: Azure AI Search による請求およびポリシー検索  
+- **分析**: 損害評価のための Mistral を用いた AI ビジョン  
 - **検証**: SharePoint ポリシードキュメント検索  
-- **通信**: メールレポートと調査サマリー  
+- **コミュニケーション**: メールレポートと調査サマリー  
 
-🎉 **おめでとうございます！** 本番レベルの AI エージェントを構築しました 🎊
+🎉 **おめでとうございます！** 本番運用可能な AI エージェントを構築しました！ 🎊
+
+<cc-next url="../06-add-copilot-api" />
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/custom-engine/agent-framework/05-add-communication--ja" />

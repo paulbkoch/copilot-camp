@@ -2,39 +2,39 @@
 search:
   exclude: true
 ---
-# ラボ BAF4 - ポリシー検索の追加
+# ラボ BAF4 - Policy 検索の追加
 
-このラボでは、Zava Insurance エージェントにポリシー検索機能を拡張します。Knowledgebases を使用して Azure AI Search で保険ポリシーを検索できるようにします。
+このラボでは、Zava Insurance Agent に Policy 検索機能を追加します。Knowledgebases を使用して Azure AI Search から保険ポリシーを検索できるようにします。
 
-???+ info "ポリシー検索を理解する"
-    このラボでは、Azure AI Search を利用したポリシー検索機能を追加します。
+???+ info "Policy 検索について"
+    このラボでは、Azure AI Search を活用した Policy 検索機能を追加します。
 
-    - 保険ポリシー（自動車、住宅、業務用）を種類、ステータス、契約者で検索
-    - 補償限度額、免責額、保険料などの構造化されたポリシー詳細を取得
+    - 保険ポリシー（Auto、Homeowners、Commercial）をタイプ、ステータス、または契約者で検索
+    - 保障限度額、免責金額、保険料など構造化されたポリシー詳細を取得
     - ポリシーに紐づく車両・不動産情報にアクセス
-    - Knowledgebases を用いた自然言語クエリ
+    - Knowledgebases を用いた自然言語クエリに対応
     
-    これにより、アジャスターはポリシー情報を迅速に見つけ、クレームの補償範囲を確認できます。
+    これによりアジャスターは、クレーム対応時に迅速にポリシー情報を検索し、補償内容を確認できます。
 
-## エクササイズ 1: ポリシーのインデックスと Knowledge Source の追加
+## Exercise 1: Policies インデックスと Knowledge Source の追加
 
-KnowledgeBaseService を拡張し、クレームに加えてポリシーもサポートしましょう。
+KnowledgeBaseService を拡張し、Claims に加えて Policies をサポートしましょう。
 
-### 手順 1: ポリシー定数とインデックス作成の追加
+### Step 1: Policy 用定数とインデックス作成の追加
 
-??? note "この手順で行うこと"
-    追加内容は次のとおりです。
+??? note "このステップで行うこと"
+    追加される内容:
 
-    - **ポリシー定数**: ポリシー用インデックスと Knowledge Source の名前を定義
-    - **ポリシーインデックス**: ポリシーデータ（種類、ステータス、補償、車両/不動産情報）の検索インデックス
-    - **ポリシー Knowledge Source**: ポリシーインデックスを Knowledge Base に接続
-    - **ポリシーデータのインデックス化**: JSON ファイルからサンプルポリシーを読み込みインデックス
+    - **Policies 定数**: Policy インデックスと Knowledge Source 名の定義
+    - **Policies インデックス**: Policy データ（タイプ、ステータス、補償、車両／不動産情報）用の検索インデックス
+    - **Policies Knowledge Source**: Policy インデックスを Knowledge Base に接続
+    - **Policies データのインデクシング**: JSON ファイルからサンプルポリシーをロードしてインデックス化
     
-    これらの追加は既存のクレーム機能を変更せずに動作します。
+    これらは既存の Claims 機能に影響を与えることなく共存します。
 
 1️⃣ `src/Services/KnowledgeBaseService.cs` を開きます。
 
-2️⃣ `private const string ClaimsKnowledgeSource = "claims-knowledge-source";` を見つけ、**ポリシー用の定数とインデックス**を追加します。
+2️⃣ `private const string ClaimsKnowledgeSource = "claims-knowledge-source";` を探し、その直後に Policy 用の定数とインデックスを追加します:
 
 ```csharp
 // Knowledge source names
@@ -44,7 +44,7 @@ private const string PoliciesKnowledgeSource = "policies-knowledge-source";
 private const string PoliciesIndex = "policies-index";
 ```
 
-3️⃣ `EnsureClaimsIndexAsync` メソッドを見つけ、その直後に `EnsurePoliciesIndexAsync` メソッドを追加します。
+3️⃣ `EnsureClaimsIndexAsync` メソッドを見つけ、その直後に `EnsurePoliciesIndexAsync` メソッドを追加します:
 
 ```csharp
 public async Task EnsurePoliciesIndexAsync()
@@ -99,11 +99,11 @@ public async Task EnsurePoliciesIndexAsync()
 
 <cc-end-step lab="baf4" exercise="1" step="1" />
 
-### 手順 2: Knowledge Source をポリシー対応に更新
+### Step 2: Knowledge Source を Policies 含めて更新
 
-`CreateKnowledgeSourcesAsync` メソッドを更新し、クレームとポリシー両方の Knowledge Source を作成します。
+`CreateKnowledgeSourcesAsync` メソッドを更新し、Claims と Policies の Knowledge Source を両方作成します。
 
-1️⃣ `CreateKnowledgeSourcesAsync` メソッドを見つけ、下記の更新版に **丸ごと置き換え** ます。
+1️⃣ `CreateKnowledgeSourcesAsync` メソッドを見つけ、以下の内容に全体を置き換えます。これには Claims と Policies の両方が含まれます:
 
 ```csharp
 public async Task CreateKnowledgeSourcesAsync()
@@ -167,17 +167,17 @@ public async Task CreateKnowledgeSourcesAsync()
 
 <cc-end-step lab="baf4" exercise="1" step="2" />
 
-### 手順 3: Knowledge Base をポリシー対応に更新
+### Step 3: Knowledge Base に Policies を追加
 
-Knowledge Base 定義を更新してポリシー Knowledge Source を含めます。
+Knowledge Base 定義を更新し、Policies Knowledge Source を組み込みます。
 
-1️⃣ `new KnowledgeSourceReference(name: ClaimsKnowledgeSource)` の行を見つけ、コンマを追加してその直後に次の行を追加します。これでクレームとポリシーの両方が含まれます。
+1️⃣ `new KnowledgeSourceReference(name: ClaimsKnowledgeSource)` を探し、末尾にカンマを付けて次の行を追加し、Claims と Policies の両方を含めます:
 
 ```csharp
  new KnowledgeSourceReference(name: PoliciesKnowledgeSource)
 ```
 
-最終的な Knowledge Base 作成コードは次のようになります。
+最終的な Knowledge Base 作成コードは次のようになります:
 
 ```csharp
 var knowledgeBase = new KnowledgeBase(
@@ -198,11 +198,11 @@ var knowledgeBase = new KnowledgeBase(
 
 <cc-end-step lab="baf4" exercise="1" step="3" />
 
-### 手順 4: ポリシーデータのインデックス化
+### Step 4: Policy データのインデクシング追加
 
-サンプルポリシーデータをインデックス化するメソッドを追加します。
+サンプル Policy データをインデックス化するメソッドを追加します。
 
-1️⃣ `IndexSampleDataAsync` メソッドを見つけ、ポリシーを含むように更新します。
+1️⃣ `IndexSampleDataAsync` メソッドを見つけ、Policies を含むように更新します:
 
 ```csharp
 public async Task IndexSampleDataAsync()
@@ -219,7 +219,7 @@ public async Task IndexSampleDataAsync()
 }
 ```
 
-2️⃣ `IndexClaimsDataAsync` メソッドのすぐ後ろに `IndexPoliciesDataAsync` メソッドを追加します。
+2️⃣ `IndexClaimsDataAsync` メソッドの直後に `IndexPoliciesDataAsync` メソッドを追加します:
 
 ```csharp
 /// <summary>
@@ -325,11 +325,11 @@ private async Task IndexPoliciesDataAsync()
 
 <cc-end-step lab="baf4" exercise="1" step="4" />
 
-### 手順 5: GetPolicyByNumberAsync ヘルパーメソッドの追加
+### Step 5: GetPolicyByNumberAsync ヘルパーメソッドの追加
 
-インデックスからポリシー詳細を直接取得するヘルパーメソッドを追加します。
+インデックスから直接 Policy 詳細を取得するヘルパーメソッドを追加します。
 
-1️⃣ Retrieval セクションで、`GetClaimByNumberAsync` のすぐ後ろに `GetPolicyByNumberAsync` を追加します。
+1️⃣ Retrieval セクションで、`GetClaimByNumberAsync` の直後に `GetPolicyByNumberAsync` を追加します:
 
 ```csharp
 /// <summary>
@@ -361,19 +361,19 @@ public async Task<SearchDocument?> GetPolicyByNumberAsync(string policyNumber)
 
 <cc-end-step lab="baf4" exercise="1" step="5" />
 
-## エクササイズ 2: PolicyPlugin の作成
+## Exercise 2: PolicyPlugin の作成
 
-ポリシー検索とポリシー詳細機能を備えた PolicyPlugin を作成します。
+Policy 検索と Policy 詳細取得機能を備えた PolicyPlugin を作成します。
 
-### 手順 1: 完全な PolicyPlugin の作成
+### Step 1: PolicyPlugin の実装
 
-??? note "このプラグインの機能"
-    `PolicyPlugin` は次の 2 つの主要機能を提供します。
+??? note "このプラグインで行うこと"
+    `PolicyPlugin` は 2 つの主要機能を提供します:
     
-    - **SearchPolicies**: Azure AI Search Knowledge Base を用いた自然言語によるポリシー検索（ClaimsPlugin と同様）
-    - **GetPolicyDetails**: 指定されたポリシー番号の構造化されたポリシー情報を取得
+    - **SearchPolicies**: Azure AI Search Knowledge Base を用いた自然言語による Policy 検索（ClaimsPlugin と同様）
+    - **GetPolicyDetails**: 指定したポリシー番号の構造化されたポリシー情報を取得
 
-1️⃣ `src/Plugins/PolicyPlugin.cs` という新しいファイルを作成し、以下の実装を追加します。
+1️⃣ `src/Plugins/PolicyPlugin.cs` に新しいファイルを作成し、以下の実装を追加します:
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -544,17 +544,17 @@ namespace ZavaInsurance.Plugins
 
 <cc-end-step lab="baf4" exercise="2" step="1" />
 
-## エクササイズ 3: エージェントに PolicyPlugin を登録
+## Exercise 3: Agent への PolicyPlugin 登録
 
 PolicyPlugin を ZavaInsuranceAgent に組み込みます。
 
-### 手順 1: Program.cs の初期化を更新
+### Step 1: Program.cs の初期化を更新
 
-Program.cs の初期化コードを更新し、ポリシーインデックスを作成するようにします。
+Program.cs の初期化コードを更新し、Policies インデックスを作成します。
 
 1️⃣ `src/Program.cs` を開きます。
 
-2️⃣ Azure AI Search の初期化セクションを見つけ、ポリシーを含むように更新します。
+2️⃣ Azure AI Search 初期化セクションを見つけ、Policies を含めるように更新します:
 
 ```csharp
 Console.WriteLine("🔍 Initializing Azure AI Search Knowledge Base...");
@@ -571,13 +571,13 @@ Console.WriteLine("✅ Knowledge Base initialized successfully");
 
 <cc-end-step lab="baf4" exercise="3" step="1" />
 
-### 手順 2: エージェントインストラクションを更新
+### Step 2: AgentInstructions の更新
 
-エージェントのインストラクションをポリシーツールを含むように更新します。
+エージェントのインストラクションに Policy 用ツールを追加します。
 
 1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ `AgentInstructions` プロパティを更新します。
+2️⃣ `AgentInstructions` プロパティを見つけ、次のように更新します:
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -603,18 +603,18 @@ Be concise and professional in your responses.
 
 <cc-end-step lab="baf4" exercise="3" step="2" />
 
-### 手順 3: PolicyPlugin の登録
+### Step 3: PolicyPlugin の登録
 
 エージェントのツールに PolicyPlugin を追加します。
 
-1️⃣ `GetClientAgent` メソッドで、`ClaimsPlugin claimsPlugin = new(context, knowledgeBaseService, configuration);` の直後に PolicyPlugin を追加します。
+1️⃣ `GetClientAgent` メソッド内で `ClaimsPlugin claimsPlugin = new(context, knowledgeBaseService, configuration);` を見つけ、その直後に PolicyPlugin を追加します:
 
 ```csharp
 // Create PolicyPlugin with required dependencies
 PolicyPlugin policyPlugin = new(context, knowledgeBaseService);
 ```
 
-2️⃣ ClaimsPlugin のツールが登録されている箇所を見つけ、PolicyPlugin のツールも追加します。
+2️⃣ ClaimsPlugin のツールを登録している箇所を見つけ、PolicyPlugin のツールも追加します:
 
 ```csharp
 // Register PolicyPlugin tools
@@ -624,13 +624,13 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(policyPlugin.GetPolicyDetails));
 
 <cc-end-step lab="baf4" exercise="3" step="3" />
 
-### 手順 4: StartConversationPlugin のウェルカムメッセージを更新
+### Step 4: StartConversationPlugin の歓迎メッセージ更新
 
-ポリシー検索と SharePoint 連携を追加したので、ウェルカムメッセージをすべての機能を反映したものに更新します。
+Policy 検索と SharePoint 連携を追加したので、歓迎メッセージを更新します。
 
 1️⃣ `src/Plugins/StartConversationPlugin.cs` を開きます。
 
-2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を次の内容に置き換えます。
+2️⃣ `StartConversation` メソッド内の `welcomeMessage` 変数を次の内容に置き換えます:
 
 ```csharp
             var welcomeMessage = "👋 Welcome to Zava Insurance Claims Assistant!\n\n" +
@@ -650,22 +650,22 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(policyPlugin.GetPolicyDetails));
                                 "Ready to complete a full claims investigation? What would you like to start with?";
 ```
 
-??? note "完全な機能セット"
-    ウェルカムメッセージには、クレーム検索、ポリシー検証、ビジョン分析を含むすべての機能が反映されています。これで完成したエージェントのフル機能に合致します。
+??? note "機能一覧"
+    歓迎メッセージには、Claims 検索、Policy バリデーション、Vision 解析など、すべての機能が記載されています。これで完成版エージェントのフル機能と一致します。
 
 <cc-end-step lab="baf4" exercise="3" step="4" />
 
-## エクササイズ 4: ポリシー検索のテスト
+## Exercise 4: Policy 検索のテスト
 
-すべてのポリシー機能をテストしましょう！
+それでは、すべての Policy 機能をテストしましょう！
 
-### 手順 1: 起動と初期化の確認
+### Step 1: 起動と初期化確認
 
 1️⃣ VS Code で **F5** を押してデバッグを開始します。
 
 2️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。
 
-3️⃣ ターミナル出力を確認します。次のような表示が出るはずです。
+3️⃣ ターミナル出力を確認します。次のような表示が見えるはずです:
 
 ```
 🔍 Initializing Azure AI Search Knowledge Base...
@@ -684,79 +684,79 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(policyPlugin.GetPolicyDetails));
 ✅ Knowledge Base initialized successfully
 ```
 
-4️⃣ ブラウザーウィンドウが開き、Microsoft 365 Copilot が表示されます。
+4️⃣ Microsoft 365 Copilot がブラウザーで開きます。
 
 5️⃣ **Azure Portal で確認**:
 
 - [Azure Portal](https://portal.azure.com){target=_blank} にアクセス
-- Azure AI Search サービスに移動
-- **Indexes** をクリック → `claims-index` と `policies-index` の両方が表示されることを確認
+- お使いの Azure AI Search サービスへ移動
+- **Indexes** をクリック → `claims-index` と `policies-index` があることを確認
 - **Agentic retrieval** > **Knowledge Bases** をクリック → `zava-insurance-kb` に Knowledge Source が 2 つあることを確認
 
 <cc-end-step lab="baf4" exercise="4" step="1" />
 
-### 手順 2: ポリシー検索のテスト
+### Step 2: Policy 検索をテスト
 
-1️⃣ Microsoft 365 Copilot で次を入力します。 
+1️⃣ Insurance Agent で次を入力します:
 
 ```text
-Find all active auto insurance policies
+What's covered in auto insurance policy
 ```
 
 エージェントは `SearchPolicies` を使用し、一致するポリシーと詳細を返すはずです。
 
-2️⃣ 次を試します。 
-
-```text
-Show me policies for Sarah Martinez
-```
-
-3️⃣ 次を試します。 
-
-```text
-Find homeowners insurance policies with Active status
-```
-
 <cc-end-step lab="baf4" exercise="4" step="2" />
 
-### 手順 3: ポリシー詳細のテスト
+### Step 3: Policy 詳細をテスト
 
-1️⃣ 次を試します。 
-
-```text
-Get details for policy POL-AUTO-001
-```
-
-エージェントは `GetPolicyDetails` を使用し、補償、車両情報などの構造化情報を返すはずです。
-
-2️⃣ 次を試します。 
+1️⃣ 次を試してください:
 
 ```text
-Show me policy POL-HOME-001
+Get details for policy AU-78902
 ```
 
-3️⃣ クレームからポリシーへのワークフローを試します。 
+エージェントは `GetPolicyDetails` を使用し、補償内容や車両情報などの構造化データを返すはずです。
+
+2️⃣ 次を試してください:
 
 ```text
-Get details for claim CLM-2025-001001, then show me the policy for that claim
+Show me policy AU-34569
 ```
 
-エージェントはまずクレーム詳細（ポリシー番号を含む）を取得し、その後ポリシー詳細を取得するはずです。
+3️⃣ Claim から Policy へのワークフローを試してください:
+
+```text
+does claim CLM-2025-001001 owner have active policy
+```
+
+4️⃣ そのクレームに紐づくポリシーの詳細を取得します:
+
+```text
+show me policy for claim CLM-2025-001001
+```
+
+5️⃣ クレームの補償範囲を確認する追加質問をしてみましょう:
+
+```text
+does their policy cover the claim
+```
+
+エージェントはまずクレーム詳細を取得し（ポリシー番号を含む）、次にポリシー詳細を取得するはずです。
 
 <cc-end-step lab="baf4" exercise="4" step="3" />
 
 ---8<--- "ja/b-congratulations.md"
 
-ラボ BAF4 - ポリシー検索の追加を完了しました！
+ラボ BAF4 - Policy 検索の追加を完了しました！
 
-次のことを学習しました。
+次のことを学びました:
 
-- ✅ Azure AI Search にポリシーインデックスと Knowledge Source を追加
-- ✅ ポリシー検索とポリシー詳細機能を持つ PolicyPlugin を作成
+- ✅ Azure AI Search に Policies インデックスと Knowledge Source を追加
+- ✅ 検索とポリシー詳細機能を備えた PolicyPlugin を作成
 - ✅ エージェントに PolicyPlugin を登録
-- ✅ ポリシー検索と取得をテスト
+- ✅ Policy 検索と取得をテスト
 
-これで Zava Insurance エージェントは、Azure AI Search を使用してクレームとポリシーの両方を検索できるようになりました！
+これで Zava Insurance Agent は、Azure AI Search を使用して Claims と Policies の両方を検索できるようになりました！
 
 <cc-next url="../05-add-communication" />
 

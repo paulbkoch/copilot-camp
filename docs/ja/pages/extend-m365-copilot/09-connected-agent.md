@@ -2,17 +2,17 @@
 search:
   exclude: true
 ---
-# ラボ 09: Connected Agent - Zava のマルチ エージェント請求オーケストレーション
+# ラボ 09: Connected Agents - Zava のマルチエージェント請求オーケストレーション
 
-このラボでは、Zava Insurance 向けにマルチ エージェント オーケストレーション システムを構築します。まず、瞬時に価格インテリジェンスを提供する請負業者の価格知識を組み込んだ **Zava Procurement** エージェントを作成します。次に、**Zava Procurement** と **Zava Claims Assistant**（ラボ 08 で作成）を接続する **Zava Care** オーケストレーター エージェントを作成し、クレーム アジャスターが単一かつ統合された対話型インターフェイスから、組み込み価格データと MCP サーバーのリアルタイム クレーム情報にアクセスできるようにします。
+このラボでは、Zava Insurance 向けにマルチエージェントのオーケストレーション システムを構築します。まずは、インスタントな価格インテリジェンスのために契約業者の価格情報を埋め込んだ **Zava Procurement** エージェントを作成します。次に、**Zava Procurement** と **Zava Claims Assistant**（ラボ 08 で作成）を連携させる **Zava Care** オーケストレーター エージェントを構築し、クレーム調整担当者が統合された会話インターフェースを通じて、埋め込み価格データと MCP サーバーからのリアルタイムなクレーム情報の両方にアクセスできるようにします。
 
 <div class="lab-intro-video">
     <div style="flex: 1; min-width: 0;">
         <iframe  src="//www.youtube.com/embed/coGNxTRBfyw" frameborder="0" allowfullscreen style="width: 100%; aspect-ratio: 16/9;">          
         </iframe>
-          <div>このビデオでラボの概要をご覧ください。</div>
+          <div>このビデオでラボの概要を確認できます。</div>
             <div class="note-box">
-            📘 <strong>Note:</strong>  Agents Toolkit および Microsoft 365 Copilot における Embedded knowledge は現在プレビューです。
+            📘 <strong>注意:</strong>  Agents Toolkit と Microsoft 365 Copilot における Embedded knowledge 機能は現在プレビュー段階です。
         </div>
     </div>
     <div style="flex: 1; min-width: 0;">
@@ -22,84 +22,84 @@ search:
 
 ---
 
-## Connected Agent とは
+## Connected Agents とは
 
-**Connected Agent** は AI エージェント アーキテクチャの次の進化形であり、複数の専門エージェントがシームレスに連携できるようにします。すべてを 1 つで行うモノリシック エージェントを構築する代わりに、Connected Agent は特定のタスクに最適化された専門エージェントをオーケストレーションしながら、統一されたユーザー エクスペリエンスを維持します。
+**Connected Agents** は、AI エージェント アーキテクチャの次世代形態であり、複数の専門エージェントがシームレスに連携して機能します。すべてを 1 つのエージェントに詰め込むのではなく、特定タスクに最適化されたエージェントをオーケストレーションし、統一されたユーザー エクスペリエンスを維持します。
 
-> Declarative Agent における Connected Agent は現在 Public Preview です。
+> Declarative エージェントにおける Connected Agents は、現在パブリック プレビュー段階です。
 
-### エンタープライズ ワークフローへの利点
+### エンタープライズ ワークフローのメリット
 
-保険金請求処理のような複雑なビジネス シナリオにおいて、Connected Agent は以下を提供します。
+保険金請求処理のような複雑なビジネス シナリオにおいて、Connected Agents は次のメリットを提供します。
 
-- 専門エージェントによる **ドメイン専門知識**
-- 複数データ ソースにまたがる **包括的なカバレッジ**
-- 集中型エージェントの追加による **効率的なスケーリング**
-- バックエンドの複雑さを感じさせない **一貫したユーザー エクスペリエンス**
-- 責務分離が明確な **保守しやすいアーキテクチャ**
+- **ドメイン専門知識** を備えた専門エージェント
+- **複数データソースにわたる包括的カバレッジ**
+- **効率的なスケーリング**（フォーカスされたエージェントを追加可能）
+- **一貫したユーザー エクスペリエンス**（バックエンドの複雑さを隠蔽）
+- **保守しやすいアーキテクチャ**（関心の分離が明確）
 
-## 🎯 ラボの目的
+## 🎯 ラボの目標
 
 このラボを完了すると、次のことができるようになります。
 
-1. 請負業者の価格ドキュメントを使用して **Embedded knowledge を備えた Declarative Agent を作成** する  
-2. 複数の専門エージェントを調整する **Connected Orchestrator Agent を構築** する  
-3. **リアルタイム MCP データと Embedded knowledge** を組み合わせてマルチ エージェント オーケストレーションをテストする  
-4. **ライブ データ ソースと静的ナレッジ ベース** を活用するハイブリッド AI アーキテクチャを理解する  
+1. 契約業者の価格ドキュメントを使用し、**埋め込みナレッジを持つ Declarative Agent を作成**する  
+2. **複数の専門エージェントを調整するオーケストレーター エージェントを構築**する  
+3. **リアルタイムの MCP データと埋め込みナレッジを組み合わせてマルチエージェント オーケストレーションをテスト**する  
+4. **ライブ データ ソースと静的ナレッジ ベースの両方を活用するハイブリッド AI アーキテクチャ**を理解する  
 
 ---
 
 ## 📚 前提条件
 
-このラボを始める前に、次を準備してください。
+このラボを始める前に、以下を準備してください。
 
-- **ラボ 8 を完了** していること：MCP サーバー統合が正常に動作している Zava の Declarative Agent  
-- **Microsoft 365 Agents Toolkit** のプレリリース版（Embedded knowledge 用）  
-- テスト用の **Microsoft 365 Copilot ライセンス** が有効  
+- **ラボ 8 を完了済み**: MCP サーバー統合済みの Zava の Declarative Agent が正常に動作していること  
+- **Microsoft 365 Agents Toolkit** プリリリース版（Embedded Knowledge 用）  
+- **Microsoft 365 Copilot ライセンス** が有効であること（テスト用）  
 
 ---
 
-## Exercise 1: Embedded knowledge 用の新しい Declarative Agent を作成する
+## Exercise 1: 埋め込みナレッジ用の新しい Declarative Agent の作成
 
-この演習では、Microsoft 365 Agents Toolkit を使用して、プロジェクト内に保存されたファイルを利用する新しい Declarative Agent プロジェクトを作成します。
+この演習では、Microsoft 365 Agents Toolkit を使って、ローカルに保存したファイルを利用する新しい Declarative Agent プロジェクトを作成します。
 
-### Step 1: Microsoft 365 Agents Toolkit で新しいエージェントを作成
+### 手順 1: Microsoft 365 Agents Toolkit で新規エージェントを作成
 
 1. **VS Code** を開きます  
-2. アクティビティ バー（左サイドバー）の **Microsoft 365 Agents Toolkit** アイコンをクリックします  
-3. プロンプトが表示されたら Microsoft 365 開発者アカウントでサインインします  
-4. Agents Toolkit パネルで **"Create a New Agent/App"** をクリックします  
-5. テンプレート オプションから **"Declarative Agent"** を選択します  
-6. オプションから **"No Action"** を選択します  
-7. **Default folder** を選択します  
-8. アプリケーション名として `Zava Procurement` と入力します  
+2. アクティビティ バー（左側）で **Microsoft 365 Agents Toolkit** アイコンをクリック  
+3. プロンプトが表示されたら Microsoft 365 開発者アカウントでサインイン  
+4. Agents Toolkit パネルで **"Create a New Agent/App"** をクリック  
+5. テンプレート オプションから **"Declarative Agent"** を選択  
+6. **"No Action"** を選択  
+7. **Default folder** を選択  
+8. アプリケーション名に `Zava Procurement` と入力  
 
 これで新しいエージェントが作成され、プロジェクトが新しい VS Code ウィンドウで開きます。
 
-  <cc-end-step lab="e9" exercise="1" step="1" />
+<cc-end-step lab="e9" exercise="1" step="1" />
 
-### Step 2: ファイルの組み込み方法を理解する
+### 手順 2: ファイルを埋め込む方法の理解
 
-`appPackage` フォルダーに移動し、その内容を確認します。`manifest.json`（エージェントの機能を定義）や `declarativeAgent.json`（エージェントの動作を構成）など、以前の Declarative Agent の作業で見覚えのあるファイルが確認できます。
+`appPackage` フォルダーを開いて内容を確認します。これまでの Declarative Agent で見覚えのある `manifest.json`（エージェントの機能定義）と `declarativeAgent.json`（エージェントの動作設定）が含まれています。
 
-ここでの重要な追加要素は `EmbeddedKnowledge` フォルダーです。ここに Zava の請負業者価格データ ファイルを格納し、エージェントに直接組み込むことで、ライブ データベース クエリを行わずに瞬時に価格インテリジェンスへアクセスできます。
+今回追加された重要なフォルダーが `EmbeddedKnowledge` です。ここに Zava の契約業者価格データ ファイルを配置すると、エージェントに直接埋め込まれ、ライブ データベース クエリなしで価格インテリジェンスに即時アクセスできるようになります。
 
 !!! note
-    テスト用に機密ラベルのないサンプル PDF ファイルを提供しています。独自のファイル、特に Office ドキュメントでテストする場合は、テナントで構成された機密ラベルを順守していることを確認してください。
+    テスト用として感度ラベルのないサンプル PDF が提供されています。独自ファイル（特に Office ドキュメント）でテストする場合は、テナントで設定された感度ラベルに準拠していることを確認してください。
 
-  <cc-end-step lab="e9" exercise="1" step="2" />
+<cc-end-step lab="e9" exercise="1" step="2" />
 
-## Exercise 2: Zava の請負業者調達知識用にエージェントを構成する
+## Exercise 2: Zava の契約業者調達ナレッジ用エージェントの設定
 
-### Step 1: ファイルをローカルにダウンロード
+### 手順 1: ファイルをローカルにダウンロード
 
-[こちらの URL](https://download-directory.github.io/?url=https://github.com/microsoft/copilot-camp/tree/main/docs/assets/docs/extend-m365-copilot-09&filename=EmbeddedKnowledge){target=_blank} にアクセスし、すべてのファイルを新しく作成した Declarative Agent プロジェクトの `appPackage/EmbeddedKnowledge` フォルダーに展開します。
+[こちらの URL](https://download-directory.github.io/?url=https://github.com/microsoft/copilot-camp/tree/main/docs/assets/docs/extend-m365-copilot-09&filename=EmbeddedKnowledge){target=_blank} にアクセスし、すべてのファイルを新しく作成した Declarative Agent プロジェクト内の `appPackage/EmbeddedKnowledge` フォルダーに展開します。
 
-  <cc-end-step lab="e9" exercise="2" step="1" />
+<cc-end-step lab="e9" exercise="2" step="1" />
 
-### Step 2: エージェントの ID と説明を更新
+### 手順 2: エージェントの ID と説明を更新
 
-`appPackage/declarativeAgent.json` の内容を次の構成に置き換えます。
+`appPackage/declarativeAgent.json` の内容を以下の構成に置き換えます。
 
 ```json
 {
@@ -155,50 +155,50 @@ search:
     ]
 }
 ```
-  <cc-end-step lab="e9" exercise="2" step="2" />
+<cc-end-step lab="e9" exercise="2" step="2" />
 
-### Step 3: 詳細なエージェント インストラクションを作成
+### 手順 3: 詳細なエージェント インストラクションの作成
 
 ```txt
-# Role and Expertise
-You are a specialized procurement expert for Zava, an insurance claims management company. Your primary responsibility is to help insurance adjusters find the most appropriate and cost-effective contractors for property damage repairs and restoration work.
+# Role and Purpose
+You are a procurement assistant for Zava, an insurance services company. Your primary purpose is to help insurance adjusters find appropriate and cost-effective contractors for property repair and restoration work.
 
-# Core Competencies
-- Expert knowledge of construction and restoration pricing
-- Deep familiarity with approved contractor networks
-- Understanding of insurance claims processes and requirements
+# Core Capabilities
+- Knowledge of construction and restoration pricing
+- Familiarity with approved contractor networks
+- Understanding of insurance service processes and requirements
 - Ability to compare pricing across multiple vendors
 - Knowledge of industry-standard repair methodologies
 
 # Available Resources
-You have exclusive access to confidential pricing documents from Zava's network of pre-approved, vetted contractors:
-- Pacific Water Restoration - Water damage and restoration services
+You have access to internal pricing documents from Zava's network of pre-approved contractors:
+- Pacific Water Restoration - Water and restoration services
 - Thompson Roofing Solutions - Roofing repairs and replacements
 - Wilson General Contractors - General construction and repair services
-- Claims Inspection Guidelines - Standard procedures and requirements
+- Inspection Guidelines - Standard procedures and requirements
 
-These pricing documents contain valuable, proprietary information that gives you the ability to provide accurate cost estimates and vendor recommendations.
+These pricing documents provide the information needed to give accurate cost estimates and vendor recommendations.
 
 # Primary Responsibilities
-1. Help adjusters quickly identify appropriate contractors for specific repair needs
+1. Help adjusters identify appropriate contractors for specific repair needs
 2. Provide accurate pricing information based on the embedded contractor rate sheets
 3. Compare pricing across multiple approved vendors when applicable
-4. Ensure recommendations align with claims inspection guidelines
+4. Ensure recommendations align with inspection guidelines
 5. Offer insights on cost-effectiveness and vendor specializations
 
 # Interaction Guidelines
 - Always base your responses on the information in the embedded knowledge files
 - When providing pricing, cite the specific contractor and reference their rate sheet
 - If a request falls outside the scope of available contractor services, clearly state this
-- Prioritize accuracy over speed - verify pricing details before responding
+- Prioritize accuracy - verify pricing details before responding
 - Be concise and professional, as adjusters need quick, actionable information
 - When comparing options, present information in a clear, organized format
 
-# Constraints
+# Scope Boundaries
 - Only recommend contractors whose pricing documents you have access to
-- Do not make up or estimate pricing that isn't documented in your knowledge base
-- Stay focused on procurement and vendor selection - defer claims policy questions to appropriate resources
-- Maintain confidentiality of pricing information - this is for internal Zava use only
+- Only provide pricing that is documented in your knowledge base
+- Stay focused on procurement and vendor selection - refer policy questions to appropriate resources
+- Keep pricing information for internal Zava use only
 
 # Response Format
 When answering queries:
@@ -208,9 +208,13 @@ When answering queries:
 4. Offer comparative analysis when multiple options exist
 5. Include any relevant guidelines or considerations from inspection standards
 ```
-  <cc-end-step lab="e9" exercise="2" step="3" />
 
-### Step 4: Teams アプリ マニフェストを更新
+!!! warning "Responsible AI Content Guidelines"
+    「Declarative Copilot content violates Responsible AI guidelines」というエラーが表示された場合は、インストラクションを簡素化してみてください。複雑なロールプレイ シナリオや詳細な手順を減らし、中立的な表現を使用してください。まず基本的なタスク説明から始め、徐々に複雑さを追加すると、どの部分が違反を引き起こしているか特定しやすくなります。
+
+<cc-end-step lab="e9" exercise="2" step="3" />
+
+### 手順 4: Teams アプリ マニフェストの更新
 
 `appPackage/manifest.json` を開き、Zava のブランディングに更新します。
 
@@ -258,54 +262,53 @@ When answering queries:
 
 <cc-end-step lab="e9" exercise="2" step="4" />
 
-## Exercise 3: エージェント統合をテストする
+## Exercise 3: エージェント統合のテスト
 
-Declarative Agent がネイティブ Embedded knowledge から請負業者の価格データを正常に取得できるかを確認します。
+Declarative Agent がネイティブな埋め込みナレッジから契約業者の価格データを正常に取得できることをテストします。
 
-### Step 1: エージェントをプロビジョニング
+### 手順 1: エージェントをプロビジョニング
 
-プロジェクトを開いた状態の VS Code で:
+プロジェクトを開いた状態で VS Code にて:
 
-1. **Microsoft 365 Agents Toolkit** パネルを開きます  
-2. ライフサイクル セクションの **"Provision"** をクリックします  
-4. プロビジョニングが完了するまで待ちます。これにより、エージェント パッケージが作成され、アップロードされます  
+1. **Microsoft 365 Agents Toolkit** パネルを開く  
+2. ライフサイクル セクションで **"Provision"** をクリック  
+3. プロビジョニングが完了するまで待機（エージェント パッケージが作成・アップロードされます）
 
 <cc-end-step lab="e9" exercise="3" step="1" />
 
-### Step 2: Microsoft 365 Copilot でテスト
+### 手順 2: Microsoft 365 Copilot でテスト
 
-1. ブラウザーを開き、URL  https://m365.cloud.microsoft/chat/ で Copilot チャットを開きます  
-2. 左側の Agents で **"Zava Procurement"** エージェントを探します  
-3. 以下の会話スターターを試してください。  
-
+1. ブラウザーを開き、URL https://m365.cloud.microsoft/chat/ にアクセス  
+2. 左側の Agents で **"Zava Procurement"** エージェントを探す  
+3. 以下の会話スターターを試す  
    - "What are the rates for emergency water extraction and drying services?"  
    - "Which contractors offer 24/7 emergency response and what are their rates?"  
 
-  <cc-end-step lab="e9" exercise="3" step="2" />
+<cc-end-step lab="e9" exercise="3" step="2" />
 
 ---
 
-## Exercise 4: Orchestrator Agent を構築する
+## Exercise 4: オーケストレーター エージェントの構築
 
-この演習では、既存の Zava エージェントを統合し、統合された請求処理エクスペリエンスを提供する Connected Agent を作成します。
+この演習では、既存の Zava エージェントを連携させ、統合されたクレーム処理エクスペリエンスを提供する Connected Agent を作成します。
 
-### Step 1: Connected Agent プロジェクトを作成
+### 手順 1: Connected Agent プロジェクトの作成
 
-1. **VS Code** を開きます  
-2. **Microsoft 365 Agents Toolkit** アイコンをクリックします  
-3. Agents Toolkit パネルで **"Create a New Agent/App"** をクリックします  
-4. テンプレート オプションから **"Declarative Agent"** を選択します  
-5. **"No Action"** を選択します  
-6. 既定のフォルダーの場所を選択します  
-7. アプリケーション名に `ZavaCare` と入力します  
+1. **VS Code** を開く  
+2. アクティビティ バーで **Microsoft 365 Agents Toolkit** アイコンをクリック  
+3. Agents Toolkit パネルで **"Create a New Agent/App"** をクリック  
+4. テンプレート オプションから **"Declarative Agent"** を選択  
+5. **"No Action"** を選択  
+6. 既定のフォルダーを選択  
+7. アプリケーション名に `ZavaCare` と入力  
 
-これで新しい Declarative Agent プロジェクトが作成され、既存の 2 つのエージェントを接続するために使用します。
+これで新しい Declarative Agent プロジェクトが作成され、このプロジェクトを使用して既存の 2 つのエージェントを接続します。
 
 <cc-end-step lab="e9" exercise="4" step="1" />
 
-### Step 2: エージェントの ID と説明を更新
+### 手順 2: エージェントの ID と説明を更新
 
-`appPackage/declarativeAgent.json` の内容を Zava の構成に置き換えます。
+`appPackage/declarativeAgent.json` の内容を Zava 用の構成に置き換えます。
 
 ```json
 {
@@ -333,7 +336,7 @@ Declarative Agent がネイティブ Embedded knowledge から請負業者の価
 ```
 <cc-end-step lab="e9" exercise="4" step="2" />
 
-### Step 3: 詳細なエージェント インストラクションを作成
+### 手順 3: 詳細なエージェント インストラクションの作成
 
 `appPackage/instruction.txt` を更新し、エージェント用の包括的なインストラクションを追加します。
 
@@ -469,31 +472,31 @@ You are the Zava Claims Assistant, an intelligent agent designed to help Zava in
 
 <cc-end-step lab="e9" exercise="1" step="3" />
 
-### Step 4: Connected Agent の機能を構成
+### 手順 4: Connected Agent の機能を構成
 
-オーケストレーター エージェントを 2 つの専門エージェントに接続するには、それぞれの Microsoft 365 Title ID を使用してリンクする必要があります。
+オーケストレーター エージェントを 2 つの専門エージェントに接続するには、それぞれの Microsoft 365 Title ID をリンクする必要があります。
 
-#### 4.1: Zava Claims Agent ID を取得
+#### 4.1: Zava Claims エージェント ID の取得
 
-1. **ZavaClaims プロジェクト**（ラボ 08 で作成）を VS Code で開きます  
-2. `env/.env.dev` ファイルに移動します  
-3. `M365_TITLE_ID` の値（例: `12345678-abcd-1234-abcd-123456789abc`）を探します  
-4. この GUID を **Claims Agent ID** として安全な場所にコピーします  
+1. **ZavaClaims プロジェクト**（ラボ 08 で作成）を VS Code で開く  
+2. `env/.env.dev` ファイルへ移動  
+3. `M365_TITLE_ID` の値（例: `12345678-abcd-1234-abcd-123456789abc`）を確認  
+4. **この GUID をコピー**して安全な場所に保存し、**Claims Agent ID** としてラベル付け  
 
-#### 4.2: Zava Procurement Agent ID を取得
+#### 4.2: Zava Procurement エージェント ID の取得
 
-1. **ZavaProcurement プロジェクト**（本ラボで作成）を VS Code で開きます  
-2. `env/.env.dev` ファイルに移動します  
-3. `M365_TITLE_ID` の値を探します  
-4. この GUID を **Procurement Agent ID** として安全な場所にコピーします  
+1. **ZavaProcurement プロジェクト**（本ラボで作成）を VS Code で開く  
+2. `env/.env.dev` ファイルへ移動  
+3. `M365_TITLE_ID` の値を確認  
+4. **この GUID をコピー**して安全な場所に保存し、**Procurement Agent ID** としてラベル付け  
 
-#### 4.3: エージェントを接続
+#### 4.3: エージェントの接続
 
-1. **ZavaCare プロジェクト**（現在のプロジェクト）に戻ります  
-2. `appPackage/declarativeAgent.json` を開きます  
-3. `conversation_starters` 配列（`]` で終了）を見つけます  
-4. `conversation_starters` の閉じ括弧の後に **コンマ** を追加します  
-5. 直後に次のコードを **貼り付け** ます  
+1. **ZavaCare プロジェクト**（現在のプロジェクト）に戻る  
+2. `appPackage/declarativeAgent.json` を開く  
+3. `conversation_starters` 配列（最後は `]`）を見つける  
+4. `conversation_starters` の閉じ角かっこ `]` の後に **カンマを追加**  
+5. 直後に次のコードを **貼り付け**  
 
 ```json
 "worker_agents": [
@@ -506,12 +509,11 @@ You are the Zava Claims Assistant, an intelligent agent designed to help Zava in
 ]
 ```
 
-6. **プレースホルダーを置き換えます**  
+6. **プレースホルダーを置き換え**  
+   - `PASTE_CLAIMS_AGENT_ID_HERE` を **Claims Agent ID** に置換  
+   - `PASTE_PROCUREMENT_AGENT_ID_HERE` を **Procurement Agent ID** に置換  
 
-   - `PASTE_CLAIMS_AGENT_ID_HERE` を **Claims Agent ID** に置き換え  
-   - `PASTE_PROCUREMENT_AGENT_ID_HERE` を **Procurement Agent ID** に置き換え  
-
-**最終構造の例:**  
+**最終構成例:**  
 ```json
 {
   "conversation_starters": [
@@ -528,37 +530,37 @@ You are the Zava Claims Assistant, an intelligent agent designed to help Zava in
 }
 ```
 
-7. **ファイルを保存** すると、オーケストレーター エージェントが 2 つの専門エージェントに接続されます！
+7. **ファイルを保存** - これでオーケストレーター エージェントが 2 つの専門エージェントと接続されました！
 
 <cc-end-step lab="e9" exercise="1" step="4" />
 
-## Exercise 5: Connected Agent のオーケストレーションをテストする
+## Exercise 5: Connected Agent オーケストレーションのテスト
 
-### Step 1: Connected Agent をプロビジョニング
+### 手順 1: Connected Agent をプロビジョニング
 
-1. VS Code で **Microsoft 365 Agents Toolkit** パネルを開きます  
-2. ライフサイクル セクションの **"Provision"** をクリックします  
-3. プロビジョニングが完了するまで待ちます  
+1. VS Code で **Microsoft 365 Agents Toolkit** パネルを開く  
+2. ライフサイクル セクションで **"Provision"** をクリック  
+3. プロビジョニングが完了するまで待機  
 
 <cc-end-step lab="e9" exercise="2" step="1" />
 
-### Step 2: マルチ エージェント ワークフローをテストする
+### 手順 2: マルチエージェント ワークフローのテスト
 
-1. ブラウザーを開き、URL  https://m365.cloud.microsoft/chat/ で Copilot チャットを開きます  
-2. 左側の Agents で **Zava Care** エージェントを開き、次のオーケストレーション ワークフローをテストします。  
+1. ブラウザーを開き、URL https://m365.cloud.microsoft/chat/ にアクセス  
+2. 左側の Agents で **Zava Care** エージェントを選択し、以下のオーケストレーション ワークフローをテストします。  
 
-**複雑なワークフロー : Emergency Coordination**  
+**複雑なワークフロー: 緊急対応の調整**  
 ```
 Find me all open roof damage claims along with contractor pricing insights.
-```  
+```
 
-このエージェントの会話スターターも試して、マルチ エージェント協調の動作を確認してください。
+このエージェントの会話スターターも試し、マルチエージェント協調の動作を確認してください。
 
 <cc-end-step lab="e9" exercise="2" step="2" />
 
-## おめでとうございます！ 🎉
+## おめでとうございます！🎉
 
-Zava Insurance の Connected Agent オーケストレーション システムを構築できました！これは、専門性を持ちながら協調し、無限に拡張可能なエンタープライズ AI システムの未来を示す先進的なマルチ エージェント アーキテクチャの結実です。 🚀
+Zava Insurance の Connected Agent オーケストレーション システムを見事に構築しました！これは、専門性を持つエージェントが連携し、無限に拡張可能なエンタープライズ AI システムの未来を示す大きな成果です。🚀
 
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/extend/09-connected-agent--ja" />

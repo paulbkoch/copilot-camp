@@ -2,100 +2,100 @@
 search:
   exclude: true
 ---
-# Lab BAF0 - 事前準備
+# ラボ BAF0 - 前提条件
 
-このラボでは、 Microsoft 365 Agents SDK と Agent Framework を使用して開発するカスタムエンジン エージェントをビルド、テスト、デプロイするための開発環境をセットアップします。
+このラボでは **Microsoft 365 Agents SDK** と **Agent Framework** を使用して開発するカスタム エンジン エージェントをビルド、テスト、デプロイするための開発環境を構築します。
 
 このラボで学習する内容:
 
--  Microsoft 365 環境のセットアップ  
--  Visual Studio Code への Microsoft 365 Agents Toolkit のインストールと構成  
--  必要なリソースを作成するための Azure 環境の準備  
--  必要な開発ツールのインストール  
+- Microsoft 365 環境のセットアップ
+- Visual Studio Code と Microsoft 365 Agents Toolkit のインストールと構成
+- 必要な Azure リソースを作成するための Azure 環境の準備
+- 必要な開発ツールのインストール
 
 !!! pied-piper "注意事項"
-    これらのサンプルおよびラボは、教育目的とデモンストレーション目的で提供されています。運用環境での利用を想定していません。運用環境に導入する場合は、必ずプロダクション品質に更新してください。
+    これらのサンプルおよびラボは教育およびデモンストレーション目的で提供されています。本番環境で使用する場合は必ず本番レベルにアップグレードしてください。
 
 !!! note "注"
-    独自のカスタムエンジン エージェントをインストールして実行するには、管理者権限を持つ Microsoft 365 テナントが必要です。カスタムエンジン エージェントをテストするために Microsoft 365 Copilot ライセンスは不要です。
+    カスタム エンジン エージェントをインストールして実行するには、管理者権限を持つ Microsoft 365 テナントが必要です。カスタム エンジン エージェントのテストに Microsoft 365 Copilot ライセンスは不要です。
 
 ## Exercise 1 : Microsoft Teams のセットアップ
 
-### Step 1: Teams へのカスタムアプリのアップロードを有効化する
+### Step 1: Teams でカスタム アプリのアップロードを有効化
 
-既定では、エンド ユーザーはアプリを直接アップロードできず、 Teams 管理者がエンタープライズ アプリ カタログにアップロードする必要があります。この手順では、 M365 Agents Toolkit による直接アップロードが可能になるようにテナントを設定します。
+既定では、エンド ユーザーはアプリを直接アップロードできず、Teams 管理者がエンタープライズ アプリ カタログにアップロードする必要があります。この手順では、M365 Agents Toolkit が直接アップロードできるようにテナントを設定します。
 
-1️⃣ [https://admin.microsoft.com/](https://admin.microsoft.com/){target=_blank} に移動して Microsoft 365 管理センターを開きます。
+1️⃣ [https://admin.microsoft.com/](https://admin.microsoft.com/){target=_blank} にアクセスし、Microsoft 365 Admin Center を開きます。  
 
-2️⃣ 管理センター左側のパネルで **すべてを表示** を選択し、ナビゲーションを展開します。パネルが開いたら **Teams** を選択して Microsoft Teams 管理センターを開きます。
+2️⃣ 管理センターの左側パネルで **Show all** を選択し、すべてのナビゲーションを表示します。次に **Teams** を選択して Microsoft Teams admin center を開きます。  
 
-3️⃣ Microsoft Teams 管理センター左側で **Teams アプリ** を展開し、 **セットアップ ポリシー** を選択します。アプリのセットアップ ポリシー一覧が表示されるので **Global (Org-wide default)** ポリシーを選択します。
+3️⃣ Microsoft Teams admin center の左側で **Teams apps** を展開し、**Setup Policies** を選択します。App setup policy の一覧が表示されるので **Global (Org-wide default) policy** を選択します。  
 
-4️⃣ **カスタムアプリのアップロード** スイッチが **オン** になっていることを確認します。
+4️⃣ **Upload custom apps** のスイッチが **On** になっていることを確認します。  
 
-5️⃣ 画面を下までスクロールし、 **保存** ボタンを選択して変更を保存します。
+5️⃣ ページ下部の **Save** ボタンを選択して変更を保存します。  
 
-> 変更が反映されるまで最大 24 時間かかる場合がありますが、通常はもっと早く反映されます。
+> 変更が反映されるまで最大 24 時間かかる場合がありますが、通常はもっと早く完了します。
 
 <cc-end-step lab="baf0" exercise="1" step="1" />
 
 ## Exercise 2: 開発環境のセットアップ
 
-このラボは Windows、 macOS、 Linux いずれのマシンでも実施できますが、前提条件をインストールできる権限が必要です。アプリケーションをインストールできない場合は、別のマシン（または仮想マシン）を使用してください。
+Windows、macOS、Linux のいずれのマシンでもラボを進められますが、前提条件をインストールできる権限が必要です。権限がない場合は、別のマシンまたは仮想マシンを使用してください。
 
-### Step 1: Visual Studio Code のインストール
+### Step 1: Visual Studio Code をインストール
 
-1️⃣ [https://code.visualstudio.com/](https://code.visualstudio.com/){target=_blank} から Visual Studio Code をダウンロードしてインストールします。
+1️⃣ [https://code.visualstudio.com/](https://code.visualstudio.com/){target=_blank} から Visual Studio Code をダウンロードしてインストールします。  
 
-2️⃣ インストール後に Visual Studio Code を起動します。
+2️⃣ インストール後、Visual Studio Code を起動します。  
 
 <cc-end-step lab="baf0" exercise="2" step="1" />
 
-### Step 2: .NET 9 SDK のインストール
+### Step 2: .NET 9 SDK をインストール
 
-Microsoft 365 Agents SDK と Agent Framework でエージェントをビルドおよび実行するには .NET 9 SDK が必要です。
+Microsoft 365 Agents SDK と Agent Framework のビルドおよび実行には .NET 9 SDK が必要です。
 
-1️⃣ [https://dotnet.microsoft.com/download/dotnet/9.0](https://dotnet.microsoft.com/download/dotnet/9.0){target=_blank} から .NET 9 SDK をダウンロードしてインストールします。
+1️⃣ [https://dotnet.microsoft.com/download/dotnet/9.0](https://dotnet.microsoft.com/download/dotnet/9.0){target=_blank} から .NET 9 SDK をダウンロードしてインストールします。  
 
-2️⃣ ターミナルを開き、次のコマンドを実行してインストールを確認します。
+2️⃣ ターミナルを開き、次のコマンドでインストールを確認します:  
 
 ```bash
 dotnet --version
 ```
 
-バージョン 9.0.x 以上が表示されれば成功です。
+9.0.x 以上のバージョンが表示されれば成功です。  
 
 <cc-end-step lab="baf0" exercise="2" step="2" />
 
-### Step 3: C# Dev Kit 拡張機能のインストール
+### Step 3: C# Dev Kit 拡張機能をインストール
 
-1️⃣ Visual Studio Code で、サイドバーの拡張機能アイコンをクリックするか `Ctrl+Shift+X` (Windows/Linux) または `Cmd+Shift+X` (Mac) を押して **拡張機能ビュー** を開きます。
+1️⃣ Visual Studio Code で、サイドバーの **Extensions** アイコンをクリックするか `Ctrl+Shift+X` (Windows/Linux) または `Cmd+Shift+X` (Mac) を押して Extensions ビューを開きます。  
 
-2️⃣ **C# Dev Kit** を検索し、 **Install** をクリックします。
+2️⃣ **C# Dev Kit** を検索し、**Install** をクリックします。  
 
 <cc-end-step lab="baf0" exercise="2" step="3" />
 
-### Step 4: Microsoft 365 Agents Toolkit 拡張機能のインストール
+### Step 4: Microsoft 365 Agents Toolkit 拡張機能をインストール
 
-1️⃣ Visual Studio Code の拡張機能ビューで **Microsoft 365 Agents Toolkit** を検索し、 **Install** をクリックします。
+1️⃣ Extensions ビューで **Microsoft 365 Agents Toolkit** を検索し、**Install** をクリックします。  
 
-2️⃣ インストール後、サイドバーに Microsoft 365 Agents Toolkit のアイコンが表示されます。
+2️⃣ インストールが完了すると、サイドバーに Microsoft 365 Agents Toolkit のアイコンが表示されます。  
 
 <cc-end-step lab="baf0" exercise="2" step="4" />
 
-### Step 5: Azure CLI のインストール
+### Step 5: Azure CLI をインストール
 
 Azure CLI は Azure リソースのプロビジョニングと管理に必要です。
 
-1️⃣ [https://learn.microsoft.com/cli/azure/install-azure-cli](https://learn.microsoft.com/cli/azure/install-azure-cli){target=_blank} から Azure CLI をダウンロードしてインストールします。
+1️⃣ [https://learn.microsoft.com/cli/azure/install-azure-cli](https://learn.microsoft.com/cli/azure/install-azure-cli){target=_blank} から Azure CLI をダウンロードしてインストールします。  
 
-2️⃣ ターミナルを開き、次のコマンドを実行してインストールを確認します。
+2️⃣ ターミナルを開き、次のコマンドでインストールを確認します:  
 
 ```bash
 az --version
 ```
 
-3️⃣ Azure にサインインします。
+3️⃣ 続いて Azure にサインインします:  
 
 ```bash
 az login
@@ -103,9 +103,9 @@ az login
 
 <cc-end-step lab="baf0" exercise="2" step="5" />
 
-### Step 6: DevTunnel のインストール
+### Step 6: DevTunnel をインストール
 
-DevTunnel はローカル開発とデバッグに必要です。インターネットからローカルマシンへの安全なトンネルを作成します。
+DevTunnel はローカル開発とデバッグのため、インターネットからローカル マシンへのセキュアなトンネルを作成します。
 
 **Windows:**
 
@@ -125,121 +125,136 @@ curl -sL https://aka.ms/DevTunnelCliInstall | bash
 devtunnel --version
 ```
 
-!!! tip "DevTunnel の代替案"
-    DevTunnel は Visual Studio 2022 にも含まれています。 Visual Studio 2022 をインストール済みの場合、すでに DevTunnel が利用可能です。
+!!! tip "DevTunnel の代替"
+    Visual Studio 2022 には DevTunnel が同梱されています。すでに Visual Studio 2022 をお使いの場合、追加インストールは不要です。
 
 <cc-end-step lab="baf0" exercise="2" step="6" />
 
+### Step 7: Azure Functions Core Tools をインストール
+
+ローカルで Azure Functions を実行するには Azure Functions Core Tools が必要です。
+
+1️⃣ Azure Functions Core Tools をインストールします:
+
+**Windows:**
+
+```bash
+winget install Microsoft.Azure.FunctionsCoreTools
+```
+
+**macOS:**
+
+```bash
+brew tap azure/functions
+brew install azure-functions-core-tools@4
+```
+
+2️⃣ 次のコマンドでインストールを確認します:
+
+```bash
+func --version
+```
+
+4.x 以上のバージョンが表示されれば成功です。  
+
+<cc-end-step lab="baf0" exercise="2" step="7" />
+
 ## Exercise 3: Azure 環境のセットアップ
 
-このコースを完了するには、 Microsoft Foundry リソースを作成して AI モデルをデプロイするための Azure サブスクリプションが必要です。
+このコースを完了するには、Microsoft Foundry リソースを作成し AI モデルをデプロイするための Azure サブスクリプションが必要です。
 
-### Step 1: Azure サブスクリプションの取得
+### Step 1: Azure サブスクリプションを取得
 
-まだ Azure サブスクリプションをお持ちでない場合は、 [Azure 無料アカウント](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0044p){target=_blank} を有効化できます。最初の 30 日間で使用できる 200 ドル分のクレジットが付与されます。
+まだ Azure サブスクリプションをお持ちでない場合は、$200 のクレジットが 30 日間利用できる [Azure free account](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0044p){target=_blank} を有効化できます。
 
-Azure 無料アカウントを有効化する手順:
+手順:
 
-1️⃣ [Azure free account](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0044p){target=_blank} ページにアクセスし、 **Activate** を選択します。
+1️⃣ [Azure free account](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0044p){target=_blank} ページで **Activate** を選択します。  
+2️⃣ 利用するアカウントでサインインします (演習で使用する Microsoft 365 テナント アカウントを推奨)。  
+3️⃣ **Privacy Statement** にチェックを入れ、**Next** を選択します。  
+4️⃣ 本人確認のため携帯電話番号を入力します。  
+5️⃣ 一時的な認証のため支払い情報を入力し、**Sign up** を選択します。課金は発生しません (従量課金に移行しない限り)。  
 
-2️⃣ 任意のアカウントでログインします。ラボで使用する Microsoft 365 テナント アカウントの使用を推奨します。
-
-3️⃣ Privacy Statement にチェックを入れ、 **Next** を選択します。
-
-4️⃣ 本人確認のため携帯電話番号を入力します。
-
-5️⃣ 一時的な認証のため支払い情報を入力します。従量課金制へ移行しない限り請求されません。完了したら **Sign up** を選択します。
-
-!!! tip "ヒント: 30 日以降の Azure リソース管理"
-    無料アカウントは 30 日間のみ利用可能です。30 日終了時点で無料サブスクリプションに稼働中のサービスがないか確認してください。継続して Azure サービスを使用する場合は、支出制限を解除して従量課金サブスクリプションへアップグレードする必要があります。
+!!! tip "ヒント: 30 日後のリソース管理"
+    Azure free account は 30 日間のみ有効です。期限までに無料サブスクリプションで実行中のサービスがないか確認してください。30 日以降も利用する場合は、支出制限を解除して従量課金制サブスクリプションへアップグレードしてください。
 
 <cc-end-step lab="baf0" exercise="3" step="1" />
 
-### Step 2: Microsoft Foundry プロジェクトの作成とモデルのデプロイ
+### Step 2: Microsoft Foundry プロジェクトを作成しモデルをデプロイ
 
-このラボでは、言語モデルをデプロイした Microsoft Foundry プロジェクトが必要です。
+このラボでは、複数のモデルがデプロイされた Microsoft Foundry プロジェクトが必要です。
 
-1️⃣ [Microsoft Foundry](https://ai.azure.com){target=_blank} にアクセスし、 Azure アカウントでサインインします。  
-2️⃣ **+ Create new** → **Microsoft Foundry resource** → **Next** の順に選択します。
+1️⃣ [Microsoft Foundry](https://ai.azure.com){target=_blank} にアクセスし、Azure アカウントでサインインします。  
+2️⃣ **+ Create new** → **Microsoft Foundry resource** → **Next** を選択します。  
+3️⃣ 推奨されたプロジェクト名のまま **Create** を選択します (3～5 分ほどで作成されます)。  
 
-3️⃣ プロジェクト名は推奨値のままにし、 **Create** を選択します。プロジェクトのスキャフォールディングには通常 3～5 分かかります。
+!!! tip "リージョンの選択"
+    すべてのラボで必要なモデルをサポートする **France Central** リージョンを選択してください。
 
-!!! tip "リージョン選択"
-    すべてのラボで必要なモデルをサポートしている **France Central** リージョンを選択してください。
+4️⃣ プロジェクトが作成されたら、左側の **Deployments** を開きます。  
+5️⃣ **+ Deploy model** をクリックし **Deploy base model** を選択します。  
+6️⃣ **gpt-4.1** を検索して選択し、**Confirm** → **Deploy** をクリックします。  
 
-4️⃣ プロジェクト作成後、左側の **Deployments** に移動します。
+!!! important "モデルの選択"
+    スムーズな体験のため **gpt-4.1** を使用してください。本ラボでは knowledge base answer synthesis を利用しており、gpt-4.1 に最適化されています。他のモデルでは予期しない動作が起こる場合があります。
 
-5️⃣ **+ Deploy model** をクリックし、 **Deploy base model** を選択します。
-
-6️⃣ **gpt-4.1** を検索して選択し、 **Confirm** → **Deploy** を選択します。
-
-!!! important "モデル選択"
-    スムーズに進めるため、必ず **gpt-4.1** を使用してください。ラボでは gpt-4.1 向けに最適化された知識ベース回答合成を使用しています。他のモデルを使用すると予期しない動作になる場合があります。
+7️⃣ 続いて **text-embedding-ada-002** を検索して選択し、**Confirm** → **Deploy** をクリックします。  
 
 !!! tip "認証情報の保存"
-    次の情報を Microsoft Foundry プロジェクトから取得して安全な場所に保存してください。次のラボで必要になります。  
+    次のラボで必要になるため、以下の情報を安全な場所に控えておいてください。  
 
-    - **Endpoint URL**: Project settings → Properties（例: `https://your-resource.cognitiveservices.azure.com/`）  
+    - **Endpoint URL**: Project settings → Properties (例: `https://your-resource.cognitiveservices.azure.com/`)  
     - **API Key**: 「Keys and Endpoint」セクション  
-    - **Model Deployment Name**: gpt-4.1 デプロイ時に指定した名前  
+    - **Model Deployment Name**: gpt-4.1 デプロイ時に付けた名前  
 
 !!! note "追加モデル"
-    埋め込みや画像解析用の追加モデルのデプロイや、 Azure AI Search などの他の Azure サービスの作成は、後続のラボで行います。
+    Embeddings や Vision 分析用などの追加モデルや **Azure AI Search** などの他の Azure サービスは、後続のラボで必要になった際にデプロイします。
 
 <cc-end-step lab="baf0" exercise="3" step="2" />
 
-### Step 3: コンテンツ セーフティ フィルターの構成
+### Step 3: コンテンツ セーフティ フィルターを構成
 
-保険分野では「injury」「collision」「damage」のような用語がデフォルトのコンテンツ フィルターによりブロックされる可能性があります。閾値を下げたカスタム コンテンツ フィルターを作成します。
+保険業務では "injury"、"collision"、"damage" などの用語がデフォルトのコンテンツ フィルターに引っかかる場合があります。低いしきい値のカスタム コンテンツ フィルターを作成します。
 
-1️⃣ Microsoft Foundry でプロジェクトを開きます。
+1️⃣ Microsoft Foundry でプロジェクトを開きます。  
+2️⃣ 左サイドバーで **Guardrails + Controls** → **Content filters** を選択します。  
+3️⃣ **+ Create content filter** をクリックします。  
+4️⃣ フィルター名に **InsuranceLowFilter** と入力します。  
+5️⃣ **Input filters** を次のとおり設定します:  
+   - **Violence**: Low  
+   - **Hate**: Low  
+   - **Sexual**: Low  
+   - **Self-harm**: Low  
+   - Prompt shields for jailbreak attacks: Off  
+   - Prompt shields for indirect attacks: Off  
 
-2️⃣ 左側の **Guardrails + Controls** → **Content filters** を選択します。
+6️⃣ **Next** を選択し、**Output filters** も同様に設定します:  
+   - **Violence**: Low  
+   - **Hate**: Low  
+   - **Sexual**: Low  
+   - **Self-harm**: Low  
+   - Protected material for text: Off  
+   - Protected material for code: Off  
+   - Groundedness (Preview): Off  
 
-3️⃣ **+ Create content filter** をクリックします。
+7️⃣ **Next** をクリックします。  
+8️⃣ 「Apply filter to deployments」で **gpt-4.1** デプロイメントを選択します。  
+9️⃣ **Replace** を選択して新しいフィルターを適用します。  
+🔟 **Create filter** をクリックして完了します。  
 
-4️⃣ フィルター名を **InsuranceLowFilter** と入力します。
+!!! warning "必要な理由"
+    保険請求には "injury"、"accident"、"collision"、"bodily harm" などの用語が含まれますが、これらはデフォルトのコンテンツ フィルターでブロックされる場合があります。しきい値を **Low** に設定することで、通常の保険用語を許可しつつ、過度なコンテンツのみをブロックできます。
 
-5️⃣ **Input filters**（ユーザーが送信する内容）の設定を次のように変更します:
-
-- **Violence**: **Low**
-- **Hate**: **Low**
-- **Sexual**: **Low**
-- **Self-harm**: **Low**
-- Prompt shields for jailbreak attacks: Off
-- Prompt shields for indirect attacks: Off
-
-6️⃣ **Next** を選択し、 **Output filters**（ AI が生成する内容）にも同じ設定を行います:
-
-- **Violence**: **Low**
-- **Hate**: **Low**
-- **Sexual**: **Low**
-- **Self-harm**: **Low**
-- Protected material for text: Off
-- Protected material for code: Off
-- Groundedness (Preview): Off
-
-7️⃣ **Next** を選択します。
-
-8️⃣ 「Apply filter to deployments」で **gpt-4.1** デプロイメントを選択します。
-
-9️⃣ **Replace** を選択して新しいフィルターを適用します。
-
-🔟 最後に **Create filter** を選択します。
-
-!!! warning "この設定が必要な理由"
-    保険請求には「injury」「accident」「collision」「bodily harm」などの正当な用語が含まれますが、デフォルトのコンテンツ フィルターではこれらがブロックされる可能性があります。閾値を **Low** に設定することで、極端なコンテンツのみをブロックし、通常の保険用語を許可します。
-
-!!! tip "運用環境へのデプロイ"
-    運用環境では、組織のコンテンツ セーフティ ポリシーを確認し、フィルター設定を適切に調整してください。ここでの設定は開発とテストを目的としています。
+!!! tip "本番環境でのデプロイ"
+    本番環境では、組織のコンテンツ セーフティ ポリシーを確認し、フィルター設定を適切に調整してください。ここでの設定は開発およびテスト環境向けです。
 
 <cc-end-step lab="baf0" exercise="3" step="3" />
 
 ---8<--- "ja/b-congratulations.md"
 
-Lab BAF0 - 事前準備 が完了しました！
+Lab BAF0 - Prerequisites が完了しました！
 
-次は Lab BAF1 - 最初のエージェントの構築と実行 に進みましょう。 **Next** を選択してください。
+次は Lab BAF1 - Build and Run Your First Agent に進みます。**Next** を選択してください。
 
 <cc-next url="../01-build-and-run" />
 

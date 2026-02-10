@@ -166,10 +166,11 @@ The pre-configured VS Code tasks will automatically:
 - Launch the Azure Functions runtime
 - Install, run, and open the MCP Inspector in your browser for testing and debugging MCP tools
 
-3️⃣ Once the server is running, note the dev tunnel URL displayed in the terminal (e.g., `https://your_devtunnel_id.devtunnels.ms`). Your MCP server endpoint URL will be:
+3️⃣ Once the server is running, select the terminal window with name `Ensure DevTunnel` note the dev tunnel URL displayed in the terminal just beside the **Connect via browser**: https://devtunnel-host.devtunnels.ms
+ (e.g., `https://devtunnel-host.devtunnels.ms`). Your MCP server endpoint URL will be:
 
 ```text
-https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
+https://devtunnel-host.devtunnels.ms/runtime/webhooks/mcp
 ```
 
 !!! tip "Keep the Server Running"
@@ -189,11 +190,11 @@ Now let's configure the Custom Engine Agent to connect to your MCP server.
 
 ```bash
 # MCP Server Configuration
-MCP_SERVER_URL=https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
+MCP_SERVER_URL=https://devtunnel-host.devtunnels.ms/runtime/webhooks/mcp
 ```
 
 !!! note
-    Replace `your_devtunnel_id` with the actual tunnel ID displayed in the terminal when you started the MCP server in Exercise 1.
+    Replace `devtunnel-host` with the actual tunnel URL copied from the terminal when you started the MCP server in Exercise 1.
 
 <cc-end-step lab="baf7" exercise="2" step="1" />
 

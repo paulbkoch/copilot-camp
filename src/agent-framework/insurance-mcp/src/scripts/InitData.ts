@@ -3,11 +3,21 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 
-// Load environment variables (.env.local takes precedence over .env)
+// Load environment variables (merge all files, .env.local.user takes precedence over .env.local, which takes precedence over .env)
+const envLocalUserPath = path.join(__dirname, "../../../env/.env.local.user");
 const envLocalPath = path.join(__dirname, "../../../env/.env.local");
 const envPath = path.join(__dirname, "../../../env/.env");
-const envFile = fs.existsSync(envLocalPath) ? envLocalPath : envPath;
-dotenv.config({ path: envFile });
+
+// Load in reverse priority order (dotenv won't overwrite existing values)
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath, override: true });
+}
+if (fs.existsSync(envLocalUserPath)) {
+  dotenv.config({ path: envLocalUserPath, override: true });
+}
 
 interface ClaimAdjuster {
   id: string;
@@ -56,7 +66,7 @@ async function initializeData() {
 
     // Load configuration from environment variables
     const account = process.env.AZURE_STORAGE_ACCOUNT;
-    const accountKey = process.env.AZURE_STORAGE_KEY;
+    const accountKey = process.env.SECRET_AZURE_STORAGE_KEY;
     const tableEndpoint = process.env.AZURE_TABLE_ENDPOINT;
     const tableName = process.env.TABLE_NAME;
     const allowInsecure = process.env.ALLOW_INSECURE_CONNECTION === "true";

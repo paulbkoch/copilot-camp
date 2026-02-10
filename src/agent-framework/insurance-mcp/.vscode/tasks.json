@@ -116,12 +116,28 @@
         }
     },
     {
-        "label": "Start Dev Environment",
+        "label": "npm: install",
+        "type": "npm",
+        "script": "install",
+        "problemMatcher": [],
+        "detail": "Install npm dependencies"
+    },
+    {
+        "label": "Start Background Services",
         "dependsOrder": "parallel",
         "dependsOn": [
             "Ensure DevTunnel",
             "Start Azurite",
             "Start MCP Inspector"
+        ],
+        "problemMatcher": []
+    },
+    {
+        "label": "Start Dev Environment",
+        "dependsOrder": "sequence",
+        "dependsOn": [
+            "npm: install",
+            "Start Background Services"
         ],
         "problemMatcher": []
     }

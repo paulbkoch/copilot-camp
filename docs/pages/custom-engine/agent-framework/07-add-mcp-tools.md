@@ -105,14 +105,14 @@ Copy-Item env/.env.local.sample env/.env.local
 cp env/.env.local.sample env/.env.local
 ```
 
-2️⃣ Edit the `env/.env.local` file and fill in your Azure Table Storage details:
+2️⃣ Edit the `env/.env.local` file and fill in your Azure Table Storage details, targeting the local emulator via Azurite:
 
 ```bash
 # Azure Table Storage Configuration
-AZURE_STORAGE_ACCOUNT=your_storage_account_name
-AZURE_TABLE_ENDPOINT=https://your_storage_account_name.table.core.windows.net
+AZURE_STORAGE_ACCOUNT=devstoreaccount1
+AZURE_TABLE_ENDPOINT=http://127.0.0.1:10012/devstoreaccount1
 TABLE_NAME=ClaimAdjusters
-ALLOW_INSECURE_CONNECTION=false
+ALLOW_INSECURE_CONNECTION=true
 
 # DevTunnel Configuration
 TUNNEL_ID=
@@ -137,32 +137,21 @@ cp env/.env.local.user.sample env/.env.local.user
 SECRET_AZURE_STORAGE_KEY=your_storage_account_key
 ```
 
+Since in this lab we are using the Azurite local storage emulator, the storage key is always the same as per the [official documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string#configure-a-connection-string-for-azurite){target=_blank} and the value should be like the following:
+
+```bash
+# Azure Table Storage Configuration
+SECRET_AZURE_STORAGE_KEY=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==
+```
+
 !!! warning "Keep Secrets Secure"
     The `.env.local.user` file contains sensitive credentials and should never be committed to source control. It is already included in `.gitignore` to prevent accidental commits.
 
 <cc-end-step lab="baf7" exercise="1" step="3" />
 
-### Step 4: Installing Dependencies and Initializing Data
+### Step 4: Running the MCP Server with Dev Tunnel
 
-1️⃣ Install the project dependencies by running:
-
-```bash
-npm install
-```
-
-2️⃣ Initialize the claims adjuster data in Azure Table Storage:
-
-```bash
-npm run init-data
-```
-
-This script creates the `ClaimAdjusters` table in your Azure Storage account and populates it with sample claims adjuster records.
-
-<cc-end-step lab="baf7" exercise="1" step="4" />
-
-### Step 5: Running the MCP Server with Dev Tunnel
-
-The project includes pre-configured VS Code tasks that automate starting the dev tunnel and running the Azure Functions locally.
+The project includes pre-configured VS Code tasks that automate starting Azurite, the dev tunnel, installing npm dependencies, and running the Azure Functions locally.
 
 1️⃣ If you haven't already installed dev tunnel, follow [these instructions](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started){target=_blank}.
 
@@ -171,6 +160,7 @@ The project includes pre-configured VS Code tasks that automate starting the dev
 The pre-configured VS Code tasks will automatically:
 
 - Start Azurite (Azure Storage emulator) for local development
+- Install npm dependencies
 - Build the TypeScript project
 - Create and start the dev tunnel
 - Launch the Azure Functions runtime
@@ -185,7 +175,7 @@ https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
 !!! tip "Keep the Server Running"
     Keep both the MCP server and dev tunnel running throughout this lab. The tunnel remains active as long as VS Code is running the debug session. If you need to restart, simply press **F5** again.
 
-<cc-end-step lab="baf7" exercise="1" step="5" />
+<cc-end-step lab="baf7" exercise="1" step="4" />
 
 ## Exercise 2: Configure MCP Client in the Agent
 

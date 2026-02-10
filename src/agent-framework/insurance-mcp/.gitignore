@@ -45,3 +45,4 @@ _storage_emulator
 
 # Include .vscode folder (override parent .gitignore)
 !.vscode/
+!local.settings.json

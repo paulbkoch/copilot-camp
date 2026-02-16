@@ -4,451 +4,231 @@ search:
 ---
 # ラボ BAF7 - MCP ツール統合の追加
 
-このラボでは、Zava Insurance エージェントに Model Context Protocol ( MCP ) ツールを拡張します。Azure Functions を使用してクレーム アジャスター管理機能を提供する MCP サーバーを作成し、そのツールを Custom Engine エージェントのカスタム プラグインから利用します。
+このラボでは、Zava Insurance エージェントに Model Context Protocol (MCP) ツールを拡張します。Azure Functions を使用してクレーム アジャスター管理機能を提供する MCP サーバーを作成し、そのツールを Custom Engine エージェントのカスタム プラグインから利用します。
 
-???+ info "MCP 統合の理解"
-    **Model Context Protocol ( MCP )** により、エージェントは次のことが可能になります。
+???+ info "MCP 統合を理解する"
+    **Model Context Protocol (MCP)** により、エージェントは次のことが可能になります:
     
-    - **外部ツールへの接続**: 標準化されたプロトコルを使用して MCP サーバーのツールにアクセス
-    - **クレーム アジャスターの管理**: 専門分野や国別にアジャスターを一覧表示
-    - **クレームへのアジャスター割り当て**: クレーム種別に基づいて適切なアジャスターを自動的に割り当て
-    - **Azure Functions の活用**: MCP ツールをスケーラブルなサーバーレス関数としてホスト
+    - **外部ツールへの接続**: 標準化されたプロトコルを使用して MCP サーバーのツールへアクセス  
+    - **クレーム アジャスターの管理**: 専門分野および国別にアジャスターを一覧表示  
+    - **アジャスターのクレーム割り当て**: クレーム タイプに基づき適切なアジャスターを自動割り当て  
+    - **Azure Functions の活用**: スケーラビリティのために MCP ツールをサーバーレス関数としてホスト  
     
-    この統合は、MCP エコシステムを使用してエージェントの機能を拡張する方法を示します。
+    この統合により、MCP エコシステムを使用してエージェントの機能を拡張する方法を示します。
 
 <hr />
 
 ## 概要
 
-前回までのラボで、クレーム検索、ビジョン分析、ポリシー検索、コミュニケーション機能を追加しました。今回は、クレーム種別と場所に基づいて専門のアジャスターにルーティングするという保険ワークフローで一般的な要件に対応するため、MCP ツールでクレーム アジャスターを管理する機能を拡張します。
+前回までのラボでは、クレーム検索、ビジョン分析、ポリシー検索、コミュニケーション機能を追加しました。今回は MCP ツールを用いてクレーム アジャスターを管理できるようにエージェントを拡張します。保険業務では、クレームを専門のアジャスターにルーティングする必要があるため、よくある要件です。
 
-**Model Context Protocol ( MCP )** は、AI アプリケーションが外部データ ソースやツールに接続できるようにするオープン スタンダードです。Azure Functions で MCP サーバーを作成することで、ビジネス ロジックを MCP 互換のエージェントが利用できるツールとして公開できます。
+**Model Context Protocol (MCP)** は、AI アプリケーションが外部データソースやツールに接続できるようにするオープン スタンダードです。Azure Functions で MCP サーバーを作成することで、ビジネス ロジックを MCP 互換エージェントが利用できるツールとして公開できます。
 
-???+ note "構築するもの"
-    - **MCP サーバー**: クレーム アジャスター ツールを MCP 経由で公開する Azure Function アプリ
-    - **ClaimsAdjustersPlugin**: MCP ツールを利用してアジャスターの一覧表示と割り当てを行うプラグイン
-    - **エージェント統合**: 会話内でアジャスター管理を可能にするためプラグインを接続
+???+ note "作成するもの"
+    - **MCP サーバー**: クレーム アジャスター ツールを MCP 経由で公開する Azure Function アプリ  
+    - **ClaimsAdjustersPlugin**: MCP ツールを利用してアジャスターの一覧および割り当てを行うプラグイン  
+    - **エージェント統合**: プラグインを組み込み、会話内でアジャスター管理を実現  
 
-## Exercise 1: Azure Functions で MCP サーバーを作成する
+## Exercise 1: MCP サーバーのセットアップ
 
-??? important "事前定義された MCP サーバー"
-    MCP サーバーを最初から作成したくない場合は、Exercise 1 をスキップし、フォルダー `/src/agent-framework/insurance-mcp` から事前定義されたサーバーをダウンロードして、`env/.env.local` と `env/.env.local.user` ファイルを設定後、Visual Studio Code で F5 を押して実行できます。その場合は Exercise 2 へ進んでください。
+この演習では、クレーム アジャスター管理機能を提供する事前構築済み MCP サーバーをセットアップします。サーバーは TypeScript で書かれた Azure Functions で、Azure Table Storage にクレーム アジャスターのレコードを保存します。
 
-まず、クレーム アジャスター管理ツールを公開する MCP サーバーとして Azure Function アプリを作成します。
+### Step 1: MCP サーバーと前提条件の理解
 
-### Step 1: MCP サーバー アーキテクチャを理解する
+Insurance MCP サーバーは、Model Context Protocol 経由でクレーム アジャスター管理ツールを公開する、すぐに使用できる Azure Functions アプリケーションです。次のツールを提供します:
+
+- **get_claims_adjusters**: 国と専門分野でオプション フィルターをかけて、すべてのクレーム アジャスターを取得  
+- **get_claims_adjuster**: ID で特定のクレーム アジャスターを取得  
+- **assign_claim_adjuster**: 保険クレームにクレーム アジャスターを割り当て  
 
 ??? note "MCP サーバーの仕組み"
-    MCP サーバーは MCP クライアントから呼び出せるツールを公開します。各ツールには以下が含まれます。
+    MCP サーバーは MCP クライアントから呼び出せるツールを公開します。各ツールには次の要素があります:
     
-    - **Tool Name**: 一意の識別子 (例: `get_claims_adjusters`)
-    - **Description**: LLM がツールをいつ使用するかを理解するための説明
-    - **Properties**: 型と説明を持つ入力パラメーター
-    - **Handler**: ツールが呼び出されたときに実行される関数
+    - **ツール名**: 一意の識別子 (例: `get_claims_adjusters`)  
+    - **説明**: LLM がツールをいつ使用するか理解するための説明  
+    - **プロパティ**: 型と説明を含む入力パラメーター  
+    - **ハンドラー**: ツールが呼び出された際に実行される関数  
     
-    Azure Functions はネイティブな MCP プロトコル バインディングにより MCP サーバーのホスティング モデルを提供します。
+    Azure Functions は、ネイティブ MCP プロトコル バインディングを介して MCP サーバーをホストする便利なモデルを提供します。
 
-MCP サーバーのアーキテクチャは次の構成です。
+MCP サーバーのアーキテクチャは次のとおりです:
 
-1. **データ ストレージ**: Azure Table Storage にクレーム アジャスター レコードを保存  
+1. **データ ストレージ**: クレーム アジャスター レコード用の Azure Table Storage  
 2. **HTTP ハンドラー**: 直接 API アクセス用の REST エンドポイント  
 3. **MCP ツール ハンドラー**: エージェントが利用する MCP ツールとして登録された関数  
 
+開始前に以下を用意してください:
+
+- [Node.js v22 以上](https://nodejs.org/en){target=_blank}  
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local){target=_blank}  
+- [Visual Studio Code](https://code.visualstudio.com/){target=_blank}  
+- [Dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started){target=_blank}  
+- [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite){target=_blank} - Azure Storage エミュレーター ( `npm install -g azurite` でインストール)  
+
 <cc-end-step lab="baf7" exercise="1" step="1" />
 
-### Step 2: Azure Function プロジェクトを作成する
+### Step 2: MCP サーバーのダウンロードと確認
 
-1️⃣ MCP サーバー プロジェクト用の新しいフォルダーを作成します。
+このラボでは、事前構築済みの Insurance MCP サーバーを使用します。サーバー ファイルを [こちらからダウンロード](https://download-directory.github.io/?url=https://github.com/microsoft/copilot-camp/tree/main/src/agent-framework/insurance-mcp&filename=insurance-mcp){target=_blank} してください。
 
-```bash
-mkdir InsuranceMCPServer
-cd InsuranceMCPServer
-```
+1️⃣ ZIP を展開し、ローカル フォルダーに保存します。
 
-2️⃣ TypeScript で新しい Azure Functions プロジェクトを初期化します。
+2️⃣ 展開したフォルダーを Visual Studio Code で開きます:
 
 ```bash
-func init --typescript
+cd insurance-mcp
+code .
 ```
 
-3️⃣ 必要な依存関係をインストールします。
+3️⃣ Visual Studio Code でプロジェクト構造を確認します。主な構成要素は次のとおりです:
 
-```bash
-npm install @azure/data-tables dotenv
-npm install --save-dev @types/node
-```
+- `src/functions`: MCP ツール実装を含む Azure Functions  
+- `data`: 初期化用サンプル クレーム アジャスター データ  
+- `env`: 環境設定ファイル  
+- `package.json`: プロジェクト依存関係と npm スクリプト  
+- `host.json`: Azure Functions ホスト設定  
 
-4️⃣ 環境構成ファイル `env/.env.local` を作成します。
-
-```bash
-AZURE_STORAGE_ACCOUNT=your_storage_account
-AZURE_TABLE_ENDPOINT=https://your_storage_account.table.core.windows.net
-TABLE_NAME=ClaimsAdjusters
-ALLOW_INSECURE_CONNECTION=false
-```
-
-5️⃣ 環境構成ファイル `env/.env.local.user` を作成します。
-
-```bash
-SECRET_AZURE_STORAGE_KEY=your_storage_key
-```
+!!! info
+    MCP サーバーには、ビルド、dev tunnel の起動、Azure Functions のローカル実行を自動化する事前設定済み VS Code タスクが含まれています。 **F5** キー 1 回で全てを開始でき、開発体験が簡素化されます。
 
 <cc-end-step lab="baf7" exercise="1" step="2" />
 
-### Step 3: Claims Adjusters Function を作成する
+### Step 3: 環境の構成
 
-MCP ツール実装を含む `src/functions/ClaimsAdjusters.ts` ファイルを作成します。
+MCP サーバーを実行する前に、Azure Table Storage 接続を構成する必要があります。
 
-```typescript
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { TableClient, AzureNamedKeyCredential } from "@azure/data-tables";
-import * as dotenv from "dotenv";
-import * as path from "path";
-import * as fs from "fs";
+1️⃣ `env` フォルダーで `.env.local.sample` をコピーし、 `.env.local` という新しいファイルを作成します:
 
-// Load environment variables (.env.local.user takes precedence over .env.local)
-const envLocalFile = path.join(__dirname, "../../../env/.env.local");
-const envLocalUserFile = path.join(__dirname, "../../../env/.env.local.user");
-
-// Load .env.local first, then .env.local.user (later values override earlier ones)
-dotenv.config({ path: envLocalFile });
-if (fs.existsSync(envLocalUserFile)) {
-    dotenv.config({ path: envLocalUserFile, override: true });
-}
-
-interface ClaimAdjuster {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    country: string;
-    area: string;
-}
-
-// Initialize Table Storage client
-function getTableClient(): TableClient {
-    const account = process.env.AZURE_STORAGE_ACCOUNT;
-    const accountKey = process.env.SECRET_AZURE_STORAGE_KEY;
-    const tableEndpoint = process.env.AZURE_TABLE_ENDPOINT;
-    const tableName = process.env.TABLE_NAME;
-    const allowInsecure = process.env.ALLOW_INSECURE_CONNECTION === "true";
-
-    if (!account || !accountKey || !tableEndpoint || !tableName) {
-        throw new Error("Missing required environment variables. Please check your env/.env file.");
-    }
-
-    const credential = new AzureNamedKeyCredential(account, accountKey);
-    return new TableClient(tableEndpoint, tableName, credential, {
-        allowInsecureConnection: allowInsecure
-    });
-}
-
-// Load claims adjusters data from Table Storage
-async function loadClaimsAdjusters(): Promise<ClaimAdjuster[]> {
-    const tableClient = getTableClient();
-    const adjusters: ClaimAdjuster[] = [];
-
-    const entities = tableClient.listEntities({
-        queryOptions: { filter: `PartitionKey eq 'ClaimsAdjusters'` }
-    });
-
-    for await (const entity of entities) {
-        adjusters.push({
-            id: entity.rowKey as string,
-            firstName: entity.firstName as string,
-            lastName: entity.lastName as string,
-            email: entity.email as string,
-            phone: entity.phone as string,
-            country: entity.country as string,
-            area: entity.area as string
-        });
-    }
-
-    return adjusters;
-}
-
-// Internal implementation: List claims adjusters with optional filters
-async function listClaimsAdjustersImpl(country?: string, area?: string): Promise<ClaimAdjuster[]> {
-    let adjusters = await loadClaimsAdjusters();
-
-    // Apply filters
-    if (country) {
-        adjusters = adjusters.filter(adj => adj.country.toLowerCase() === country.toLowerCase());
-    }
-
-    if (area) {
-        adjusters = adjusters.filter(adj => adj.area.toLowerCase() === area.toLowerCase());
-    }
-
-    return adjusters;
-}
-
-// Internal implementation: Get claim adjuster by ID
-async function getClaimAdjusterByIdImpl(id: string): Promise<ClaimAdjuster | null> {
-    const tableClient = getTableClient();
-    
-    try {
-        const entity = await tableClient.getEntity("ClaimsAdjusters", id);
-        const adjuster: ClaimAdjuster = {
-            id: entity.rowKey as string,
-            firstName: entity.firstName as string,
-            lastName: entity.lastName as string,
-            email: entity.email as string,
-            phone: entity.phone as string,
-            country: entity.country as string,
-            area: entity.area as string
-        };
-        return adjuster;
-    } catch (entityError: any) {
-        if (entityError.statusCode === 404) {
-            return null;
-        }
-        throw entityError;
-    }
-}
-
-// Internal implementation: Assign a claim adjuster to a claim
-async function assignClaimAdjusterImpl(claimId: string, adjusterId: string): Promise<{
-    success: boolean;
-    assignmentId?: string;
-    adjusterName?: string;
-    error?: string;
-}> {
-    if (!claimId || !adjusterId) {
-        return {
-            success: false,
-            error: "Both claimId and adjusterId are required"
-        };
-    }
-
-    // Verify adjuster exists
-    const adjuster = await getClaimAdjusterByIdImpl(adjusterId);
-    
-    if (!adjuster) {
-        return {
-            success: false,
-            error: `Claim adjuster with ID ${adjusterId} not found`
-        };
-    }
-
-    // Generate fake assignment ID
-    const currentYear = new Date().getFullYear();
-    const randomNumber = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    const assignmentId = `ASS-${currentYear}-${randomNumber}`;
-
-    return {
-        success: true,
-        assignmentId: assignmentId,
-        adjusterName: `${adjuster.firstName} ${adjuster.lastName}`
-    };
-}
+**Windows PowerShell:**
+```powershell
+Copy-Item env/.env.local.sample env/.env.local
 ```
+
+**macOS/Linux:**
+```bash
+cp env/.env.local.sample env/.env.local
+```
+
+2️⃣ `env/.env.local` ファイルを編集し、Azure Table Storage の詳細を入力します:
+
+```bash
+# Azure Table Storage Configuration
+AZURE_STORAGE_ACCOUNT=your_storage_account_name
+AZURE_TABLE_ENDPOINT=https://your_storage_account_name.table.core.windows.net
+TABLE_NAME=ClaimAdjusters
+ALLOW_INSECURE_CONNECTION=false
+
+# DevTunnel Configuration
+TUNNEL_ID=
+```
+
+3️⃣ `.env.local.user.sample` をコピーし、 `.env.local.user` という新しいファイルを作成します:
+
+**Windows PowerShell:**
+```powershell
+Copy-Item env/.env.local.user.sample env/.env.local.user
+```
+
+**macOS/Linux:**
+```bash
+cp env/.env.local.user.sample env/.env.local.user
+```
+
+4️⃣ `env/.env.local.user` ファイルを編集し、Azure Storage アカウント キーを入力します:
+
+```bash
+# Azure Table Storage Configuration
+SECRET_AZURE_STORAGE_KEY=your_storage_account_key
+```
+
+!!! warning "機密情報の保護"
+    `.env.local.user` ファイルには機密資格情報が含まれており、ソース管理にコミットしてはいけません。 `.gitignore` に既に含まれているため、誤ってコミットされるのを防ぎます。
 
 <cc-end-step lab="baf7" exercise="1" step="3" />
 
-### Step 4: MCP ツールを登録する
+### Step 4: 依存関係のインストールとデータの初期化
 
-`src/functions/ClaimsAdjusters.ts` の末尾に MCP ツール登録を追加します。
+1️⃣ プロジェクトの依存関係をインストールします:
 
-```typescript
-// MCP Tool Handler: List claims adjusters with optional filters
-async function handleListClaimsAdjusters(input: any, context: InvocationContext): Promise<ClaimAdjuster[] | { error: string }> {
-    context.log(`MCP: Listing claims adjusters with filters`);
-
-    try {
-        const country = input.arguments["country"] || undefined;
-        const area = input.arguments["area"] || undefined;
-
-        const adjusters = await listClaimsAdjustersImpl(country, area);
-        return adjusters;
-    } catch (error) {
-        context.log('Error fetching claim adjusters:', error);
-        return { error: (error as Error).message };
-    }
-}
-
-// MCP Tool Handler: Get claim adjuster by ID
-async function handleGetClaimsAdjusterById(input: any, context: InvocationContext): Promise<ClaimAdjuster | { error: string }> {
-    context.log(`MCP: Getting claim adjuster by ID`);
-
-    try {
-        const id = input.arguments["id"];
-
-        if (!id) {
-            return { error: "Claim adjuster ID is required" };
-        }
-
-        const adjuster = await getClaimAdjusterByIdImpl(id);
-
-        if (!adjuster) {
-            return { error: `Claim adjuster with ID ${id} not found` };
-        }
-
-        return adjuster;
-    } catch (error) {
-        context.log('Error fetching claim adjuster:', error);
-        return { error: (error as Error).message };
-    }
-}
-
-// MCP Tool Handler: Assign a claim adjuster to a claim
-async function handleAssignClaimAdjuster(input: any, context: InvocationContext): Promise<{ success: boolean; assignmentId?: string; adjusterName?: string; error?: string }> {
-    context.log(`MCP: Assigning claim adjuster to claim`);
-
-    try {
-        const claimId = input.arguments["claimId"];
-        const adjusterId = input.arguments["adjusterId"];
-
-        const result = await assignClaimAdjusterImpl(claimId, adjusterId);
-        return result;
-    } catch (error) {
-        context.log('Error assigning claim adjuster:', error);
-        return { success: false, error: (error as Error).message };
-    }
-}
-
-// Register MCP tools
-app.mcpTool("get_claims_adjusters", {
-    toolName: "get_claims_adjusters",
-    description: "Retrieve a list of all insurance claims adjusters",
-    toolProperties: [
-        {
-            "propertyName": "country",
-            "propertyType": "string",
-            "description": "The country of the claim adjuster",
-            "isRequired": false
-        },
-        {
-            "propertyName": "area",
-            "propertyType": "string",
-            "description": "The area of expertise of the claim adjuster",
-            "isRequired": false
-        }
-    ],
-    handler: handleListClaimsAdjusters
-});
-
-app.mcpTool("get_claims_adjuster", {
-    toolName: "get_claims_adjuster",
-    description: "Retrieve a specific insurance claims adjuster by ID",
-    toolProperties: [
-        {
-            "propertyName": "id",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim adjuster",
-            "isRequired": true
-        }
-    ],
-    handler: handleGetClaimsAdjusterById
-});
-
-app.mcpTool("assign_claim_adjuster", {
-    toolName: "assign_claim_adjuster",
-    description: "Assign a claim adjuster to an insurance claim",
-    toolProperties: [
-        {
-            "propertyName": "claimId",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim",
-            "isRequired": true
-        },
-        {
-            "propertyName": "adjusterId",
-            "propertyType": "string",
-            "description": "The unique identifier of the claim adjuster to assign",
-            "isRequired": true
-        }
-    ],
-    handler: handleAssignClaimAdjuster
-});
+```bash
+npm install
 ```
 
-??? note "MCP ツール登録パターン"
-    各 MCP ツールは `app.mcpTool()` を使用して登録します。
-    
-    - **toolName**: ツールを呼び出す際の識別子  
-    - **description**: LLM がこのツールをいつ使用すべきかを理解するための説明  
-    - **toolProperties**: 名前、型、説明、必須フラグを含む入力パラメーターの配列  
-    - **handler**: ツール ロジックを実行する async 関数  
+2️⃣ Azure Table Storage にクレーム アジャスター データを初期化します:
+
+```bash
+npm run init-data
+```
+
+このスクリプトは Azure Storage アカウントに `ClaimAdjusters` テーブルを作成し、サンプル クレーム アジャスター レコードを投入します。
 
 <cc-end-step lab="baf7" exercise="1" step="4" />
 
-### Step 5: MCP サーバーをデプロイする
+### Step 5: Dev Tunnel で MCP サーバーを実行
 
-1️⃣ Azure で Azure Function App を作成します。
+プロジェクトには、dev tunnel を起動し Azure Functions をローカルで実行する VS Code タスクが事前設定されています。
 
-```bash
-az functionapp create --name your-mcp-server --resource-group your-rg --consumption-plan-location eastus --runtime node --runtime-version 20 --functions-version 4 --storage-account your-storage
+1️⃣ まだ dev tunnel をインストールしていない場合は、[こちらの手順](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started){target=_blank} に従ってインストールします。
+
+2️⃣ Visual Studio Code で **F5** を押して MCP サーバーを起動します。
+
+事前設定済みの VS Code タスクにより次が自動的に実行されます:
+
+- Azurite (Azure Storage エミュレーター) の起動  
+- TypeScript プロジェクトのビルド  
+- dev tunnel の作成と起動  
+- Azure Functions ランタイムの起動  
+- MCP Inspector のインストール、起動、およびブラウザーでの開放 (ツールのテストとデバッグ用)  
+
+3️⃣ サーバーが起動したら、ターミナルに表示される dev tunnel URL (`https://your_devtunnel_id.devtunnels.ms` など) を確認します。MCP サーバーのエンドポイント URL は次のようになります:
+
+```text
+https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
 ```
 
-2️⃣ 関数をデプロイします。
-
-```bash
-func azure functionapp publish your-mcp-server
-```
-
-3️⃣ MCP サーバー エンドポイント URL を控えます (例: `https://your-mcp-server.azurewebsites.net/runtime/webhooks/mcp`)
-
-??? info "開発トンネルでローカル MCP サーバーを公開"
-    MCP サーバーを Azure へ発行せずローカルで実行したまま **Dev Tunnels** で公開 URL を作成できます。
-    
-    1️⃣ Azure Function をローカルで起動します。  
-    ```bash
-    func start
-    ```
-    
-    2️⃣ 新しいターミナルで dev tunnel を作成・ホストします。  
-    ```bash
-    devtunnel create --allow-anonymous
-    devtunnel port create -p 7071
-    devtunnel host
-    ```
-    
-    3️⃣ トンネル URL (例: `https://abc123.devtunnels.ms`) をコピーし、MCP サーバー エンドポイントを構成します。  
-    ```text
-    https://abc123.devtunnels.ms/runtime/webhooks/mcp
-    ```
-    
-    デバッグとテストに便利です。`devtunnel host` コマンドを実行している限りトンネルは有効です。
+!!! tip "サーバーは起動したままにしておく"
+    このラボ全体を通じて MCP サーバーと dev tunnel を起動したままにしてください。VS Code でデバッグ セッションを実行中はトンネルが有効です。再起動が必要な場合は **F5** を再度押すだけで構いません。
 
 <cc-end-step lab="baf7" exercise="1" step="5" />
 
-## Exercise 2: エージェントで MCP クライアントを構成する
+## Exercise 2: エージェントで MCP クライアントを構成
 
-次に、Custom Engine エージェントを MCP サーバーへ接続できるよう設定します。
+次に、Custom Engine エージェントを設定して MCP サーバーへ接続します。
 
-### Step 1: MCP クライアント構成を追加する
+### Step 1: MCP クライアント設定を追加
 
 1️⃣ エージェント プロジェクトの `.env.local` ファイルを開きます。
 
-2️⃣ MCP サーバー構成を追加します。
+2️⃣ Exercise 1 で取得した dev tunnel URL を使用して MCP サーバー設定を追加します:
 
 ```bash
 # MCP Server Configuration
-MCP_SERVER_URL=https://your-mcp-server-url/runtime/webhooks/mcp
+MCP_SERVER_URL=https://your_devtunnel_id.devtunnels.ms/runtime/webhooks/mcp
 ```
+
+!!! note
+    `your_devtunnel_id` を Exercise 1 で MCP サーバーを起動した際にターミナルに表示された実際のトンネル ID に置き換えてください。
 
 <cc-end-step lab="baf7" exercise="2" step="1" />
 
-### Step 2: 依存性注入に MCP クライアントを登録する
+### Step 2: 依存性注入に MCP クライアントを登録
 
-1️⃣ ModelContextProtocol NuGet パッケージをインストールします。エージェント プロジェクト フォルダーでターミナルを開き、次を実行します。
+1️⃣ エージェント プロジェクトのルートで新しいターミナルを開き、次のスクリプトを実行して ModelContextProtocol NuGet パッケージをインストールします:
 
 ```bash
 dotnet add package ModelContextProtocol --version 0.4.1-preview.1
 ```
 
-2️⃣ `src/Program.cs` を開きます。
+2️⃣ エージェント プロジェクトの `src/Program.cs` を開きます。
 
-3️⃣ ファイルの先頭に必要な using ステートメントを追加します。
+3️⃣ ファイルの先頭に必要な using ステートメントを追加します:
 
 ```csharp
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 ```
 
-4️⃣ サービスが登録されている箇所を探し、MCP クライアント登録を追加します。
+4️⃣ 他のサービス (VisionService、LanguageModelService など) を登録している場所を見つけ、MCP クライアントの登録を追加します:
 
 ```csharp
 // Register MCP Client for claims adjusters
@@ -467,28 +247,28 @@ builder.Services.AddSingleton<McpClient>(sp =>
 
 <cc-end-step lab="baf7" exercise="2" step="2" />
 
-## Exercise 3: ClaimsAdjustersPlugin を作成する
+## Exercise 3: ClaimsAdjustersPlugin の作成
 
-次に、MCP ツールを利用してクレーム アジャスターを管理するプラグインを作成します。
+次に、MCP ツールを使用してクレーム アジャスターを管理するプラグインを作成します。
 
-### Step 1: ClaimsAdjustersPlugin を作成する
+### Step 1: ClaimsAdjustersPlugin の作成
 
 ??? note "このプラグインが行うこと"
-    `ClaimsAdjustersPlugin` は主に 2 つの機能を提供します。
+    `ClaimsAdjustersPlugin` は主に 2 つの機能を提供します:
     
     **ListClaimsAdjustersAsync**:
     
-    - クレーム種別と国でフィルターしたクレーム アジャスターを取得  
-    - クレーム種別を検証 (「Auto」と「Homeowners」のみサポート)  
+    - クレーム タイプと国でフィルターしたクレーム アジャスターを取得  
+    - クレーム タイプを検証 ( "Auto" と "Homeowners" のみサポート)  
     - MCP サーバーの `get_claims_adjusters` ツールを呼び出す  
     
     **AssignClaimAdjusterAsync**:
     
     - 特定のアジャスターをクレームに割り当て  
-    - 割り当て ID を含む確認結果を返す  
+    - 割り当て ID を含む確認メッセージを返す  
     - MCP サーバーの `assign_claim_adjuster` ツールを呼び出す  
 
-1️⃣ `src/Plugins/ClaimsAdjustersPlugin.cs` ファイルを作成し、次の実装を追加します。
+1️⃣ `src/Plugins/ClaimsAdjustersPlugin.cs` という新しいファイルを作成し、次の実装を追加します:
 
 ```csharp
 using Microsoft.Agents.Builder;
@@ -607,27 +387,27 @@ namespace ZavaInsurance.Plugins
 
 <cc-end-step lab="baf7" exercise="3" step="1" />
 
-## Exercise 4: エージェントに ClaimsAdjustersPlugin を登録する
+## Exercise 4: エージェントに ClaimsAdjustersPlugin を登録
 
-ZavaInsuranceAgent に ClaimsAdjustersPlugin を組み込みます。
+次に、ZavaInsuranceAgent に ClaimsAdjustersPlugin を組み込みます。
 
-### Step 1: エージェント コンストラクターを更新する
+### Step 1: エージェント コンストラクターの更新
 
 1️⃣ `src/Agent/ZavaInsuranceAgent.cs` を開きます。
 
-2️⃣ ファイル先頭に必要な using ステートメントを追加します。
+2️⃣ ファイルの先頭に必要な using ステートメントを追加します:
 
 ```csharp
 using ModelContextProtocol.Client;
 ```
 
-3️⃣ クラス フィールド セクションを見つけ、MCP クライアント フィールドを追加します。
+3️⃣ クラス フィールド セクションを見つけ、MCP クライアントのフィールドを追加します:
 
 ```csharp
 private readonly McpClient _mcpClient = null;
 ```
 
-4️⃣ コンストラクターを更新し、MCP クライアントを受け取って保持します。
+4️⃣ コンストラクターを更新し、MCP クライアントを受け取り保存します:
 
 ```csharp
 public ZavaInsuranceAgent(AgentApplicationOptions options, IChatClient chatClient, IConfiguration configuration, IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory, McpClient mcpClient) : base(options)
@@ -648,11 +428,11 @@ public ZavaInsuranceAgent(AgentApplicationOptions options, IChatClient chatClien
 
 <cc-end-step lab="baf7" exercise="4" step="1" />
 
-### Step 2: ClaimsAdjustersPlugin をインスタンス化する
+### Step 2: ClaimsAdjustersPlugin のインスタンス化
 
-1️⃣ `GetClientAgent` メソッド (他のプラグインをインスタンス化している箇所) を探します。
+1️⃣ `GetClientAgent` メソッド (他のプラグインをインスタンス化している場所) を見つけます。
 
-2️⃣ 他のプラグインの後に ClaimsAdjustersPlugin のインスタンス化を追加します。
+2️⃣ 既存のプラグインの後に ClaimsAdjustersPlugin のインスタンス化を追加します:
 
 ```csharp
 // Create ClaimsAdjustersPlugin with MCP client
@@ -661,9 +441,9 @@ ClaimsAdjustersPlugin claimsAdjustersPlugin = new(context, _mcpClient, _configur
 
 <cc-end-step lab="baf7" exercise="4" step="2" />
 
-### Step 3: ClaimsAdjusters ツールを登録する
+### Step 3: ClaimsAdjusters ツールの登録
 
-同じ `GetClientAgent` メソッドで `toolOptions.Tools` にツールを追加している箇所を探し、クレーム アジャスター ツールを登録します。
+同じ `GetClientAgent` メソッドで、 `toolOptions.Tools` にツールを追加している箇所を見つけ、クレーム アジャスター ツールを追加します:
 
 ```csharp
 // Register Claims Adjusters MCP tools
@@ -673,13 +453,13 @@ toolOptions.Tools.Add(AIFunctionFactory.Create(claimsAdjustersPlugin.AssignClaim
 
 <cc-end-step lab="baf7" exercise="4" step="3" />
 
-### Step 4: エージェント インストラクションを更新する
+### Step 4: エージェント インストラクションの更新
 
-エージェント インストラクションにクレーム アジャスターの機能を追加します。
+エージェント インストラクションを更新して、クレーム アジャスター機能を含めます。
 
-1️⃣ `ZavaInsuranceAgent.cs` 内の `AgentInstructions` フィールドを探します。
+1️⃣ `ZavaInsuranceAgent.cs` の `AgentInstructions` フィールドを見つけます。
 
-2️⃣ クレーム アジャスター ツールをインストラクションに追加します。
+2️⃣ クレーム アジャスター ツールに関する説明を追加します:
 
 ```csharp
 private readonly string AgentInstructions = """
@@ -716,81 +496,84 @@ private readonly string AgentInstructions = """
 ```
 
 ??? note "これらのインストラクションが重要な理由"
-    インストラクションは LLM にクレーム アジャスター ツールの効果的な使用方法を伝えます。
+    インストラクションは、LLM がクレーム アジャスター ツールを効果的に使用できるように導きます:
     
-    - **国の推定**: クレームの国情報がある場合はそれを使用  
-    - **クレーム種別の検証**: 「Auto」と「Homeowners」のみ有効な専門分野  
-    - **コンテキスト認識**: 既存のクレーム コンテキストを活用して関連するアジャスターを提供  
+    - **国の推論**: クレームに国情報がある場合、それを使用  
+    - **クレーム タイプの検証**: "Auto" と "Homeowners" のみ有効  
+    - **コンテキスト認識**: 既存のクレーム コンテキストを活用し、関連するアジャスターを提供  
 
 <cc-end-step lab="baf7" exercise="4" step="4" />
 
-## Exercise 5: MCP ツール統合をテストする
+## Exercise 5: MCP ツール統合のテスト
 
-いよいよ MCP ツール統合全体をテストします！
+それでは、MCP ツール統合全体をテストしましょう！
 
 ### Step 1: 実行と確認
 
-1️⃣ MCP サーバーが実行中であることを確認します (ローカルまたは Azure にデプロイ)。
+1️⃣ MCP サーバーが dev tunnel と共に実行中であることを確認します。実行していない場合は、MCP サーバー プロジェクトを VS Code で開き、 **F5** を押して起動します。
 
-2️⃣ VS Code で **F5** を押してエージェントをデバッグ起動します。
+2️⃣ 別の VS Code ウィンドウでエージェント プロジェクトを開き、 **F5** を押してエージェントのデバッグを開始します。
 
 3️⃣ プロンプトが表示されたら **(Preview) Debug in Copilot (Edge)** を選択します。
 
-4️⃣ ターミナルに通常の初期化メッセージが表示されます。
+4️⃣ ターミナルに通常の初期化メッセージが表示されることを確認します。
 
-5️⃣ ブラウザー ウィンドウが開き、Microsoft 365 Copilot が表示されます。
+5️⃣ Microsoft 365 Copilot がブラウザーで開きます。
+
+!!! tip "2 つのプロジェクトを同時実行"
+    MCP サーバー用とエージェント用に 2 つの VS Code ウィンドウを同時に開いて実行する必要があります。テストを行う前に両方が稼働していることを確認してください。
 
 <cc-end-step lab="baf7" exercise="5" step="1" />
 
-### Step 2: クレーム アジャスター一覧のテスト
+### Step 2: クレーム アジャスターの一覧取得をテスト
 
-1️⃣ Microsoft 365 Copilot で、まずクレームを取得してコンテキストを確立します。
+1️⃣ まず Microsoft 365 Copilot で、クレームのコンテキストを確立するためにクレームを取得します:
 
 ```text
 Get details for claim CLM-2025-001007
 ```
 
-2️⃣ 次にアジャスターを問い合わせます。
+2️⃣ 次にアジャスターを尋ねます:
 
 ```text
 List available claims adjusters for this claim
 ```
 
-エージェントは以下を行うはずです。
+エージェントは次を行うはずです:
 
-- クレームの種別 (Auto) と国を使用  
+- クレームのタイプ (Auto) とクレーム詳細に含まれる国を使用  
 - `get_claims_adjusters` MCP ツールを呼び出す  
 - 条件に一致するアジャスターの一覧を返す  
 
 <cc-end-step lab="baf7" exercise="5" step="2" />
 
-### Step 3: アジャスター割り当てのテスト
+### Step 3: アジャスターの割り当てをテスト
 
-1️⃣ アジャスターの一覧を取得した後、次のように割り当てます。
+1️⃣ アジャスター一覧を取得した後、次のようにして割り当てます:
 
 ```text
 Assign adjuster ADJ-EE-0001 to this claim
 ```
 
-エージェントは以下を行うはずです。
+エージェントは次を行うはずです:
 
 - `assign_claim_adjuster` MCP ツールを呼び出す  
-- 割り当て ID を含む確認結果を返す  
-- アジャスター名を確認する  
+- 割り当て ID 付きの確認メッセージを返す  
+- アジャスターの名前を確認する  
 
 <cc-end-step lab="baf7" exercise="5" step="3" />
 
-### Step 4: フィルター付きテスト
+### Step 4: フィルター付きでテスト
 
-1️⃣ 直接フィルターを指定してテストします。
+1️⃣ 直接フィルターを指定してテストします:
 
 ```text
 Show me all Auto adjusters in the United States
 ```
 
-エージェントは専門分野と国の両方でアジャスターをフィルターするはずです。
+エージェントは専門分野と国でアジャスターをフィルターするはずです。
 
-2️⃣ 「All」国を指定してテストします。
+2️⃣ "All" の国指定でテストします:
 
 ```text
 List all Homeowners adjusters
@@ -801,11 +584,11 @@ List all Homeowners adjusters
 <cc-end-step lab="baf7" exercise="5" step="4" />
 
 !!! success "おめでとうございます！"
-    MCP ツールを Custom Engine エージェントに統合できました。エージェントは次のことが可能になりました。
+    MCP ツールを Custom Engine エージェントに正常に統合できました。これでエージェントは次のことが可能です:
     
     ✅ 外部 MCP サーバーへの接続  
-    ✅ 専門分野と国でフィルターしたクレーム アジャスターの一覧表示  
-    ✅ アジャスターをクレームに割り当て、確認を取得  
-    ✅ クレーム コンテキストを使用して関連するアジャスターを提案  
+    ✅ 専門分野と国でフィルターしたクレーム アジャスターの一覧取得  
+    ✅ クレームへのアジャスター割り当てと確認  
+    ✅ クレーム コンテキストを利用した適切なアジャスター候補の提示  
     
-    このパターンは、任意の MCP 互換サービスと統合するために拡張できます。豊富なツール エコシステムを活用し、エージェントの機能をさらに向上させましょう。
+    このパターンを拡張することで、MCP 互換サービスとの統合を行い、豊富なツールと機能をエージェントに活用させることができます。

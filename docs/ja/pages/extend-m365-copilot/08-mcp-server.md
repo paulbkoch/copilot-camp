@@ -2,9 +2,10 @@
 search:
   exclude: true
 ---
-# ラボ 08 : Declarative エージェントを MCP サーバーに接続する
+# ラボ 08 : 宣言型エージェントを MCP サーバーに接続する
 
-このラボでは、Zava Insurance の請求システム向けに Model Context Protocol (MCP) サーバーを完全に実行し、作成する Microsoft 365 Copilot の Declarative エージェントと統合します。これにより、安全で標準化された AI エージェント通信を通じて、実際の請求データとの自然言語インタラクションが可能になります。
+このラボでは、Zava Insurance の保険金請求システム向けの **Model Context Protocol (MCP)** サーバーをローカルで実行し、作成する Microsoft 365 Copilot の宣言型エージェントと統合します。これにより、安全で標準化された AI エージェント通信を通じて、実際の保険金データに対して自然言語で対話できるようになります。
+
 
 <div class="lab-intro-video">
     <div style="flex: 1; min-width: 0;">
@@ -12,7 +13,7 @@ search:
         </iframe>
           <div>このビデオでラボの概要をご覧ください。</div>
             <div class="note-box">
-            📘 <strong>Note:</strong>   MCP Server + Declarative Agents using Agents Toolkit は現在プレビューです
+            📘 <strong>注:</strong>   MCP Server + 宣言型エージェント（Agents Toolkit 使用）は現在プレビュー段階です
         </div>
     </div>
     <div style="flex: 1; min-width: 0;">
@@ -24,31 +25,31 @@ search:
 
 ## シナリオ
 
-**Zava Insurance** は、米国太平洋北西部で 15 万世帯以上にサービスを提供する中規模の架空の住宅保険会社です。2025 年 10 月に発生した深刻な嵐で 48 時間以内に 2,000 件の請求が発生し、手動の請求処理では 3 週間の遅延と調整の問題が生じました。この危機を解決するため、Zava の CTO は、インテリジェント エージェントが定型業務を処理し、アジャスターが複雑なケースと顧客対応に集中できる AI 主導の請求業務を構想しました。開発チームは **Model Context Protocol (MCP) サーバー** を Azure インフラストラクチャ上に構築し、AI エージェントに対して請求データへの標準化された安全なアクセスを提供しました。これにより、損害評価や契約業者の専門分野、検査スケジュールなどの豊富なコンテキスト情報がリアルタイムで同期されます。MCP サーバーの導入が成功した後、Zava は **Microsoft 365 Copilot** と **Declarative エージェント** を統合し、アジャスターが複雑な API 呼び出しではなく「緊急の嵐被害請求をすべて表示して」といった自然言語でシステムと対話できるようになり、Microsoft 365 のワークフローにシームレスに AI を組み込みました。
+**Zava Insurance** は、太平洋岸北西部で 15 万戸以上を対象とする中規模の架空の住宅保険会社です。2025 年 10 月の激しい嵐により 48 時間で 2,000 件の保険金請求が寄せられた際、手動の請求業務が原因で 3 週間の遅延と調整問題が発生しました。この危機に対処するため、Zava の CTO は、インテリジェントなエージェントが定型業務を処理し、アジャスターが複雑な案件と顧客対応に集中できる **AI 支援保険金請求業務** を構想しました。開発チームは Azure インフラストラクチャを用いて **Model Context Protocol (MCP) サーバー** を構築し、損害評価、請負業者の専門分野、検査スケジュールに関する豊富なコンテキスト情報をリアルタイムで同期提供する、安全で標準化された保険金データアクセスを実現しました。MCP サーバーの導入後、Zava はこれを **Microsoft 365 Copilot** の **宣言型エージェント** と統合し、アジャスターが複雑な API 呼び出しではなく「緊急の嵐被害請求をすべて表示して」などの自然言語でシステムと対話できるようになり、既存の Microsoft 365 ワークフローに AI 支援の請求管理をシームレスに組み込むことに成功しました。
 
 ---
 
 ## 🎯 ラボの目的
 
-このラボを完了すると、次のことができるようになります。
+このラボを完了すると、次のことができるようになります:
 
-- MCP サーバーが AI エージェントとバックエンド システムをどのように接続するかを理解する
-- Zava の MCP サーバーを保険請求データで構築・実行する
-- Microsoft 365 Agents Toolkit を使用して Declarative エージェントを作成する
-- エージェントを MCP サーバーに接続し、請求管理機能を構成する
-- 自然言語クエリと実際の請求データでエージェントをテストする
+- MCP サーバーが AI エージェントをバックエンド システムに接続する方法を理解する  
+- Zava の MCP サーバーを構築し、保険金データをロードして実行する  
+- Microsoft 365 Agents Toolkit を使用して宣言型エージェントを作成する  
+- エージェントを MCP サーバーに接続し、請求管理の機能を構成する  
+- 自然言語クエリと実データでエージェントをテストする  
 
 ---
 
 ## 📚 前提条件
 
-開始前に以下を準備してください。
+開始前に、次の環境が整っていることを確認してください:
 
-- ** Node.js 22+ ** がローカルにインストールされていること
-- ** VS Code ** と ** Microsoft 365 Agents Toolkit 拡張機能 ** (バージョン 6.4.2 以上)
-- Copilot ライセンス付きの ** Microsoft 365 開発者アカウント **
-- ** TypeScript / JavaScript **、 ** REST APIs **、 ** JSON ** の基礎知識
-- VS Code のトンネリングを利用するための GitHub アカウント
+- お使いのマシンに **Node.js 22+** がインストールされている  
+- **VS Code** と **Microsoft 365 Agents Toolkit 拡張機能** (バージョン 6.4.2 以上)  
+- Copilot ライセンス付き **Microsoft 365 開発者アカウント**  
+- **TypeScript / JavaScript**、**REST API**、**JSON** の基本知識  
+- VS Code トンネリングを使用するための GitHub アカウント  
 
 ---
 
@@ -58,7 +59,7 @@ search:
 
 ### Step 1: リポジトリをクローンする
 
-ターミナルを開き、次を実行します。
+ターミナルを開き、次を実行します:
 
 ```bash
 git clone https://github.com/microsoft/copilot-camp.git
@@ -68,7 +69,7 @@ cd src/extend-m365-copilot/path-e-lab08-mcp-server/zava-mcp-server
 
 ### Step 2: 依存関係をインストールする
 
-必要なパッケージをすべてインストールします。
+必要なパッケージをすべてインストールします:
 
 ```bash
 npm install
@@ -76,16 +77,16 @@ npm install
 
 主な依存関係:
 
-- `@modelcontextprotocol/sdk` - MCP プロトコル実装
-- `@azure/data-tables` - Azure Table Storage クライアント
-- `express` - HTTP サーバー フレームワーク
-- `zod` - 実行時型バリデーション
+- `@modelcontextprotocol/sdk` - MCP プロトコル実装  
+- `@azure/data-tables` - Azure Table Storage クライアント  
+- `express` - HTTP サーバーフレームワーク  
+- `zod` - 実行時型バリデーション  
 
 <cc-end-step lab="e8" exercise="1" step="2" />
 
 ### Step 3: プロジェクト構成を確認する
 
-コードベースを確認し、VSCode でプロジェクトを開きます。以下を入力して Enter。
+コードベースの構成を確認し、VS Code でプロジェクトを開きます:
 
 ```
 code .
@@ -93,57 +94,57 @@ code .
 
 主なディレクトリ:
 
-- `src/` - TypeScript ソースコード
-- `data/` - サンプル JSON データ
+- `src/` - TypeScript ソースコード  
+- `data/` - サンプル JSON データ  
 
 <cc-end-step lab="e8" exercise="1" step="3" />
 
-サンプルデータ付きのコードベースが準備できました。 
+これでサンプルデータ付きのコードベースが準備できました。 
 
 ---
 
 ## Exercise 2: Zava のローカル請求データベースを起動する
 
-Zava は請求データベースに Azure Table Storage を使用しています。この演習では、ローカル エミュレーターを起動してサンプルデータをロードします。
+Zava は請求データベースとして Azure Table Storage を使用しています。この演習では、ローカル エミュレーターを起動し、サンプルデータを読み込みます。
 
 ### Step 1: Azure Storage エミュレーターを起動する
 
-** ターミナル 1 ** で Azurite エミュレーターを起動します。
+**ターミナル 1** で Azurite エミュレーターを起動します:
 
 ```bash
 npm run start:azurite
 ```
 
-次のような表示になります。
+表示例:
 ```
 Azurite Blob service is starting at http://127.0.0.1:10000
 Azurite Queue service is starting at http://127.0.0.1:10001
 Azurite Table service is starting at http://127.0.0.1:10002
 ```
 
-** このターミナルは開いたままにしてください ** － これがローカルのデータベース サーバーです。
+**このターミナルは開いたままにしておきます**。これがローカル データベース サーバーです。
 <cc-end-step lab="e8" exercise="2" step="1" />
 
-### Step 2: サンプル請求データをロードする
+### Step 2: サンプルの請求データを読み込む
 
-** ターミナル 2 ** で Zava のサンプルデータを初期化します。
+**ターミナル 2** で Zava のサンプルデータを初期化します:
 
 ```bash
 npm run init-data
 ```
 
-ロードされるデータ:
+これにより、以下のようなリアルなデータが読み込まれます:
 
-- ** 請求 **: 嵐被害、水害、火災のケース
-- ** 契約業者 **: 屋根専門、浸水復旧、総合工務
-- ** 検査 **: 予定済み・完了済みの検査タスク
-- ** 検査員 **: 専門分野を持つフィールド検査員
+- **Claims**: 嵐被害、水害、火災被害のケース  
+- **Contractors**: 屋根修理業者、水害復旧業者、総合施工業者  
+- **Inspections**: 予定済みおよび完了済みの検査タスク  
+- **Inspectors**: 専門分野を持つ現場検査員  
 
 <cc-end-step lab="e8" exercise="2" step="2" />
 
 ## Step 3: データロードを確認する
 
-コンソール出力を確認します。以下のような表示になります。
+コンソール出力を確認します。次のように表示されるはずです:
 ```
 🚀 Starting data initialization...
 📋 Initializing table: claims
@@ -183,40 +184,40 @@ npm run init-data
 ✨ All tables initialized successfully
 ```
 
-ローカル請求データベースが、Zava の本番環境を反映したサンプルデータで稼働しました。
+これで本番環境を模したサンプルデータ入りのローカル請求データベースが稼働しました。
 <cc-end-step lab="e8" exercise="2" step="3" />
 
 ---
 
 ## Exercise 3: MCP サーバーを起動する
 
-次に、AI エージェントが請求システムと対話できるように Zava の MCP サーバーを起動します。
+次に、保険金システムと AI エージェントが対話できるようにする Zava の MCP サーバーを起動します。
 
 
 
 ### Step 1: MCP サーバーを起動する
 
-** ターミナル 2 ** で (ターミナル 1 では Azurite を継続実行):
+**ターミナル 1** で Azurite を起動したまま、**ターミナル 2** で以下を実行します:
 
 ```bash
 npm run start:mcp-http
 ```
 
-以下のようなメッセージが表示されます (一部抜粋)。
+次のようなメッセージが表示されます（一部抜粋）:
 ```
 🚀 Zava Claims MCP HTTP Server started on 127.0.0.1:3001 
 ...
 ```
 <cc-end-step lab="e8" exercise="3" step="1" />
 
-### Step 2: サーバーヘルスをテストする
+### Step 2: サーバーのヘルスチェック
 
-ブラウザーの新しいタブで次を開きます。
+ブラウザーで次の URL にアクセスします:
 ```
 http://127.0.0.1:3001/health
 ```
 
-ブラウザーにサーバーが正常であることを示す JSON 応答が表示されます。
+ブラウザーにサーバーの正常性を示す JSON 応答が表示されるはずです。
 
 ```json
 {"status":"healthy","timestamp":"2025-11-11T01:46:11.618Z","service":"zava-claims-mcp-server","authentication":"No authentication"}
@@ -226,13 +227,13 @@ http://127.0.0.1:3001/health
 
 ### Step 3: 利用可能なエンドポイントを確認する
 
-以下の URL を開いて API を確認します。
+以下の URL を開き、API を確認します:
 
-- ** Health Check **: `http://127.0.0.1:3001/health`
-- ** API Documentation **: `http://127.0.0.1:3001/docs`
-- ** MCP Tools List **: `http://127.0.0.1:3001/tools`
+- **Health Check**: `http://127.0.0.1:3001/health`  
+- **API Documentation**: `http://127.0.0.1:3001/docs`  
+- **MCP Tools List**: `http://127.0.0.1:3001/tools`  
 
-MCP サーバーが稼働し、準備完了です。 
+MCP サーバーが起動し、準備完了です。 
 
 <cc-end-step lab="e8" exercise="3" step="3" />
 
@@ -240,11 +241,11 @@ MCP サーバーが稼働し、準備完了です。
 
 ## Exercise 4: AI エージェントとの対話をテストする
 
-MCP Inspector ツールを使って、AI エージェントが Zava の請求システムとどのように対話するかを体験します。
+MCP Inspector ツールを使用して、AI エージェントが Zava の請求システムとどのように対話するか体験します。
 
 ### Step 1: MCP Inspector を起動する
 
-** ターミナル 3 ** でインタラクティブな MCP テストツールを起動します。
+**ターミナル 3** でインタラクティブな MCP テスト ツールを起動します:
 
 ```bash
 npm run inspector
@@ -256,36 +257,36 @@ npm run inspector
 
 ### Step 2: 利用可能なツールを確認する
 
-MCP Inspector の画面には、AI エージェントが利用できる **15 個のツール** が表示されます。
+MCP Inspector では、AI エージェントが使用できる **15 個のツール** が表示されます:
 
-**請求管理ツール:**
+**Claims Management Tools:**
 
-- `get_claims` - すべての請求を一覧表示
-- `get_claim` - 特定請求の詳細を取得
-- `create_claim` - 新しい請求を作成
-- `update_claim` - 請求ステータスを更新
-- `delete_claim` - 請求を閉鎖/削除
+- `get_claims` - すべての保険金請求を一覧表示  
+- `get_claim` - 特定の請求詳細を取得  
+- `create_claim` - 新しい請求を作成  
+- `update_claim` - 請求ステータスを更新  
+- `delete_claim` - 請求をクローズ / 削除  
 
-**検査ツール:**
+**Inspection Tools:**
 
-- `get_inspections` - 検査タスクを一覧表示
-- `create_inspection` - 新しい検査をスケジュール
-- `update_inspection` - 検査ステータスを更新
+- `get_inspections` - 検査タスクを一覧表示  
+- `create_inspection` - 新しい検査をスケジュール  
+- `update_inspection` - 検査ステータスを更新  
 
-**契約業者 & 検査員ツール:**
+**Contractor & Inspector Tools:**
 
-- `get_contractors` - 専門分野で契約業者を検索
-- `get_inspectors` - 利用可能な検査員を一覧表示
+- `get_contractors` - 専門分野で請負業者を検索  
+- `get_inspectors` - 利用可能な検査員を一覧表示  
 
 <cc-end-step lab="e8" exercise="4" step="2" />
 
 ### Step 3: 「Get Claims」ツールをテストする
 
 1. `get_claims` ツールをクリック  
-2. **"Run Tool"** をクリック (パラメーター不要)  
-3. Zava の現在の請求が JSON で返ってくるのを確認  
+2. **"Run Tool"** をクリック（パラメーター不要）  
+3. Zava の現在の請求が含まれる JSON 応答を確認  
 
-以下のような請求が表示されます。
+次のような請求が表示されます:
 ```json
 {
   "id": "1",
@@ -298,120 +299,123 @@ MCP Inspector の画面には、AI エージェントが利用できる **15 個
 }
 ```
 
-![image of mcp inspector tool interacting with zava mcp server](../../../assets/images/extend-m365-copilot-08/mcp-inspector.png)
+![mcp inspector が zava mcp server と対話している画像](../../../assets/images/extend-m365-copilot-08/mcp-inspector.png)
 
 <cc-end-step lab="e8" exercise="4" step="3" />
 
-### Step 4: Dev Tunnel で公開アクセスを設定する
+### Step 4: Dev Tunnel でパブリック アクセスを設定する
 
-クラウド上の AI エージェントやチームメンバーとの共有テストを行うため、VS Code の Dev Tunnel 機能で公開 HTTPS エンドポイントを作成します。
+クラウドベースの AI エージェントからのテストやチームメンバーと共有するために、VS Code の Dev Tunnel 機能を使用して MCP サーバーに公開 HTTPS エンドポイントを作成します。
 
-#### HTTPS を使用する理由
+#### なぜ HTTP ではなく HTTPS を使用するのか?
 
-- **セキュリティ**: HTTPS は AI エージェントと MCP サーバー間の通信を暗号化  
-- **クラウド互換**: 多くのクラウドベース AI サービスは HTTPS エンドポイントを要求  
-- **本番環境想定**: 実運用に近いセキュアなアクセスを模擬  
-- **CORS 対応**: HTTPS トンネルはローカル HTTP より CORS 処理が優秀  
+- **セキュリティ**: HTTPS は AI エージェントと MCP サーバー間の通信を暗号化します  
+- **クラウド互換性**: 多くのクラウドベース AI サービスは HTTPS エンドポイントを要求します  
+- **本番環境の想定**: 実運用で MCP サーバーに安全にアクセスするシナリオを再現  
+- **クロスオリジン対応**: HTTPS トンネルはローカル HTTP より CORS (Cross-Origin Resource Sharing) を適切に処理  
 
 #### VS Code で Dev Tunnel を作成する
 
-1. VS Code のターミナルパネルで「Ports」タブを開く  
-2. 「Forward a Port」をクリックし、ポート番号 3001 を入力  
-3. 転送されたポートを右クリックし「Configure the Tunnel」を選択  
-   - Port Visibility: 「Public」を選択  
-   - Port Label: `zava-mcp-server` (任意)  
-   - Copy Local Address: クリックしてトンネル URL をコピー  
-4. 認証を求められた場合は Microsoft / GitHub アカウントでサインイン  
+1. VS Code のターミナル パネルで Ports タブを開く  
+2. Forward a Port ボタンをクリックし、ポート番号 3001 を入力  
+3. フォワードされたポートを右クリックして **Configure the Tunnel** を選択  
+   - Port Visibility: **Public**  
+   - Port Label: `zava-mcp-server`（任意）  
+4. **Copy Local Address** をクリックしてトンネル URL をクリップボードにコピー  
+5. プロンプトが表示されたら Microsoft / GitHub アカウントでサインイン  
 
-コピーした URL は次のようになります。
+   コピーされた URL の例:
 
     ```
     https://abc123def456.use.devtunnels.ms 
     ```
 
-この URL を保存してください。以降 `<tunnel-url>` と呼びます。
+   この URL を保存します。以降 `<tunnel-url>` と呼びます。
 
-#### Package.json をトンネル URL で更新する
+#### package.json をトンネル URL に更新する
 
 1. `zava-mcp-server` ディレクトリの **package.json** を開く  
-2. inspector スクリプトを以下のように変更  
+2. inspector スクリプトを次のように変更します:
 
 ```json
 "inspector": "npx @modelcontextprotocol/inspector --transport http --server-url http://localhost:3001/mcp/messages"
 ```
 
-を
+→
 
 ```json
 "inspector": "npx @modelcontextprotocol/inspector --transport http --server-url <tunnel-url>/mcp/messages"
 ```
 - `<tunnel-url>` を実際のトンネル URL に置き換えます。  
-
 - `<tunnel-url>/mcp/messages` はエージェント統合用の公開 HTTPS MCP サーバー エンドポイントとして控えておきます。  
 
-- inspector が実行中の場合は Ctrl+C で停止し、再度起動します。  
+3. Inspector が実行中の場合は Ctrl+C で停止し、再度起動します:
 
 ```
 npm run inspector
 ```
 
-MCP Inspector が公開エンドポイント用の新しいブラウザー セッションを開きます。すべてのツールとプロンプトをテストし、データが取得されることを確認してください。 
+MCP Inspector が公開エンドポイントで新しいブラウザー セッションを開きます。ツールとプロンプトをテストしてデータ返却を確認してください。 
 
-これで、AI エージェントが MCP プロトコルを通じて Zava の請求システムと対話する仕組みをテストし、外部 AI エージェントやサービスがアクセスできる公開 HTTPS エンドポイントを取得できました。 
+これで、AI エージェントが MCP プロトコルを通じて Zava の請求システムとやり取りする方法を確認し、外部 AI エージェントやサービスがアクセスできる公開 HTTPS エンドポイントを取得できました。
 
 <cc-end-step lab="e8" exercise="4" step="4" />
 ---
 
-## Exercise 5: 新しい Declarative エージェント プロジェクトを作成する
+## Exercise 5: 新しい宣言型エージェント プロジェクトを作成する
 
-この演習では、Microsoft 365 Agents Toolkit を使用して Zava の請求システムと接続する Declarative エージェント プロジェクトを作成します。
+この演習では、Microsoft 365 Agents Toolkit を使用して Zava の請求システムに接続する新しい宣言型エージェント プロジェクトを作成します。
 
-### Step 1: Microsoft 365 Agents Toolkit でエージェントを作成する
+### Step 1: Microsoft 365 Agents Toolkit で新規エージェントを作成する
 
-1. ** VS Code ** で新しいウィンドウを開く  
-2. アクティビティバー (左サイドバー) の ** Microsoft 365 Agents Toolkit ** アイコンをクリック  
-3. サインインを求められた場合は Microsoft 365 開発者アカウントでサインイン  
+1. **VS Code** で新しいウィンドウを開く  
+2. 左側の Activity Bar で **Microsoft 365 Agents Toolkit** アイコンをクリック  
+3. プロンプトが表示されたら Microsoft 365 開発者アカウントでサインイン  
 
 #### 新しいエージェント プロジェクトを作成
 
 1. Agents Toolkit パネルで **"Create a New Agent/App"** をクリック  
 2. テンプレートから **"Declarative Agent"** を選択  
-3. **"Add an Action"** を選択  
+3. **"Add an Action"** を選択してエージェントにアクションを追加  
 4. **Start with an MCP server (preview)** を選択  
-5. 前の演習で取得した公開 MCP サーバー URL を入力  
-6. エージェントのスキャフォールディング先フォルダーを選択  
-7. プロジェクト詳細を入力:  
+5. 前の演習で取得した公開 MCP Server URL を入力  
+6. 既定フォルダー（または任意の場所）を選択してエージェントをスキャフォールド  
+7. プロジェクト詳細を求められたら以下を入力:
+
    - **Application Name**: `Zava Claims Assistant`
 
-作成後 `.vscode/mcp.json` が開きます。これは VS Code が使用する MCP サーバー設定ファイルです。
+作成後、ファイル `.vscode/mcp.json` が開きます。これは VS Code が使用する MCP サーバー構成ファイルです。
 
-- **Start** ボタンを選択してサーバーからツールを取得  
-- ツールとプロンプトの数が表示されます 1️⃣  
-- **ATK:Fetch action from MCP** 2️⃣ を選択して追加したいツールを選択  
+- **Start** ボタンを選択してサーバーからツールを取得します。  
+- スタート後、利用可能なツールとプロンプトの数が表示されます 1️⃣。  
+- **ATK:Fetch action from MCP** 2️⃣ を選択し、エージェントに追加するツールを選びます。  
 
-![image ATK picking mcp tools](../../assets/images/extend-m365-copilot-08/atk.png)
+![ATK で MCP ツールを選択している画像](../../assets/images/extend-m365-copilot-08/atk.png)
 
-- **ATK:Fetch action from MCP** を実行するとアクションマニフェストの指定を求められます。 **ai-plugin.json** を選択  
-- 追加するツールを選択します (ここでは 10 個選択)  
+!!! note "ATK: Fetch action from MCP が表示されない場合"
+    **ATK: Fetch action from MCP** が表示されない場合は、VS Code を再起動してプロジェクトを再度開いてください。
 
-    - create_claim
-    - create_inspection
-    - get_claim
-    - get_claims
-    - get_contractors
-    - get_inspection
-    - get_inspections
-    - update_claim
-    - update_inspection
-    - get_inspectors
+- **ATK:Fetch action from MCP** を実行するとアクション マニフェストを求められるので **ai-plugin.json** を選択  
+- エージェントに追加したいツールを選択します。ここでは 10 個を選びます:
 
-この操作により、アクションマニフェスト **ai-plugin.json** に必要な関数、MCP サーバー URL などが自動入力されます。
+    - create_claim  
+    - create_inspection  
+    - get_claim  
+    - get_claims  
+    - get_contractors  
+    - get_inspection  
+    - get_inspections  
+    - update_claim  
+    - update_inspection  
+    - get_inspectors  
+
+このステップにより、アクション マニフェスト **ai-plugin.json** が必要な関数、MCP サーバー URL などで更新されます。
 
 <cc-end-step lab="e8" exercise="5" step="1" />
 
-### Step 2: アクションマニフェストの更新内容を確認する
+### Step 2: アクション マニフェストの更新内容を確認する
 
-`appPackage/ai-plugin.json` を開き、選択したツールと MCP サーバー URL が既に入力されていることを確認します。
+`appPackage/ai-plugin.json` を開き、選択したツールと MCP サーバー URL が自動入力されていることを確認します:
 
 ```json
 {
@@ -430,18 +434,35 @@ MCP Inspector が公開エンドポイント用の新しいブラウザー セ�
 }
 ```
 
-これで MCP サーバーに接続された 10 個のツールを備えた基本的な Declarative エージェントが完成しました。
+これで 10 個のツールを備えた MCP サーバー接続済みの基本的な宣言型エージェントができました。
+
+!!! note "Agents Toolkit (プレリリース) の既知の問題"
+    プレリリース版 Agents Toolkit では、テスト時にツール定義を別ファイルから参照できません。
+
+    回避策として、以下のようにツール定義ファイルの内容をツール説明に直接貼り付けてください:
+
+    - **appPackage/mcp-tools.json** の内容をコピー  
+    - **appPackage/ai-plugin.json** を開く  
+    - **mcp_tool_description** プロパティを探します:
+      ```json
+      "mcp_tool_description": {
+          "file": "mcp-tools.json"
+      }
+      ```
+    - **mcp_tool_description** の値を、先ほどコピーした内容に置き換えます
+
+
 <cc-end-step lab="e8" exercise="5" step="2" />
 
 ---
 
 ## Exercise 6: Zava の請求業務向けにエージェントを構成する
 
-エージェントの ID、指示、機能、会話スターターを設定し、Zava のインテリジェント請求アシスタントに仕上げます。
+基本エージェントを Zava のインテリジェント請求アシスタントに変換するため、アイデンティティ、指示、機能、会話スターターを構成します。
 
-### Step 1: エージェントの ID と説明を更新する
+### Step 1: エージェントのアイデンティティと説明を更新する
 
-`appPackage/declarativeAgent.json` の内容を Zava 用に置き換えます。
+`appPackage/declarativeAgent.json` の内容を Zava 用設定に置き換えます:
 
 ```json
 {
@@ -484,7 +505,7 @@ MCP Inspector が公開エンドポイント用の新しいブラウザー セ�
 
 ### Step 2: 詳細なエージェント指示を作成する
 
-`appPackage/instruction.txt` を以下の詳細指示に更新します。
+`appPackage/instruction.txt` を次の包括的な指示で更新します:
 
 ```plaintext
 # Zava Claims Operations Assistant
@@ -550,11 +571,15 @@ You are an intelligent insurance claims management assistant with access to the 
 - Provide clear explanations for complex procedures
 - Always prioritize customer service and regulatory compliance
 ```
+
+!!! warning "Responsible AI コンテンツ ガイドライン"
+    「Declarative Copilot content violates Responsible AI guidelines」というエラーが出る場合は、指示を簡略化してください。ロールプレイの詳細、詳細な手順、感情的な表現を減らし、基本的なタスク説明から徐々に複雑さを追加して、どの部分が違反を引き起こすかを特定します。
+    
 <cc-end-step lab="e8" exercise="6" step="2" />
 
 ### Step 3: Teams アプリ マニフェストを更新する
 
-`appPackage/manifest.json` を開き、Zava のブランディング情報に更新します。
+`appPackage/manifest.json` を開き、Zava のブランディングに更新します:
 
 ```json
 {
@@ -598,7 +623,7 @@ You are an intelligent insurance claims management assistant with access to the 
 }
 ```
 
-エージェントに Zava の請求アシスタントとしての明確な ID と詳細な指示が設定されました。
+これでエージェントは Zava の請求アシスタントとしての明確なアイデンティティと詳細指示を持ちました。
 <cc-end-step lab="e8" exercise="6" step="3" />
 
 ---
@@ -606,11 +631,13 @@ You are an intelligent insurance claims management assistant with access to the 
 
 ## Exercise 7: エージェント統合をテストする
 
-Declarative エージェントが MCP サーバーと正常に通信し、請求操作を実行できるかをテストします。
+宣言型エージェントが MCP サーバーと正しく通信し、請求業務を処理できるか確認します。
 
-### Step 1: MCP サーバーが稼働中であることを確認する
+### Step 1: MCP サーバーが稼働していることを確認する
 
-1. `zava-mcp-server` プロジェクトが開いているウィンドウに移動  
+テスト前に、MCP サーバーが稼働していることを確認します:
+
+1. `zava-mcp-server` プロジェクトが実行中のウィンドウを開く  
 2. ターミナルで Azurite が稼働中か確認: `npm run start:azurite`  
 3. MCP サーバーが稼働中か確認: `npm run start:mcp-http`  
 
@@ -618,27 +645,27 @@ Declarative エージェントが MCP サーバーと正常に通信し、請求
 
 ### Step 2: エージェントをプロビジョニングする
 
-`zava-claims-agent` プロジェクトの VS Code で:
+`zava-claims-agent` プロジェクトが開かれた VS Code で:
 
-1. ** Microsoft 365 Agents Toolkit ** パネルを開く  
-2. ライフサイクルセクションで **"Provision"** をクリック  
-3. 完了を待つ (エージェント パッケージが作成・アップロードされます)  
+1. **Microsoft 365 Agents Toolkit** パネルを開く  
+2. Lifecycle セクションで **"Provision"** をクリック  
+3. プロビジョニング完了まで待つ（エージェント パッケージが作成・アップロードされます）  
 
 <cc-end-step lab="e8" exercise="7" step="2" />
 
 ### Step 3: Microsoft 365 Copilot でテストする
 
-1. Copilot を https://m365.cloud.microsoft/chat/ で開く  
-2. 左側の Agents から Zava Claims agent を選択  
-3. 会話スターターを試す:  
-   - 「請求番号 CN202504991 の検査をすべて探して」  
-   - 「高優先度の請求とその検査状況をすべて表示して」  
+1. https://m365.cloud.microsoft/chat/ を開き Copilot を起動  
+2. 左側の Agents で Zava Claims agent を選択  
+3. 会話スターターを試します:  
+   - "Find all inspections for claim number CN202504991"  
+   - "Show me all high-priority claims and their inspection status"  
 
   <cc-end-step lab="e8" exercise="7" step="3" />
 
 ### Step 4: 自然言語クエリをテストする
 
-以下の自然言語クエリでエージェントの機能を確認します。
+以下の自然言語クエリを試して、エージェントの機能を確認してください:
 
 ```
 What claims do we have for storm damage?
@@ -660,28 +687,28 @@ Show me the details for claim number CN202504991
 Create a new claim for Alice Johnson at 456 Oak Street with fire damage from yesterday
 ```
 
-エージェントは自然言語クエリに応答し、MCP サーバーのデータと連携できるはずです。
+エージェントは自然言語クエリに応答し、MCP サーバーのデータと連携して回答するはずです。
 
 <cc-end-step lab="e8" exercise="7" step="4" />
 
 
 ### Step 5: エージェントをデバッグする 
 
-1. Zava Claims agent とのチャットで `-developer on` と送信  
-2. これにより会話のデバッグが有効化  
-3. クエリを続けてテスト  
+1. Zava Claims agent とのチャットで `-developer on` と入力  
+2. これにより会話のデバッグが有効化されます  
+3. クエリを続けてテストします  
 
-各エージェント応答の末尾にある Agent debug info パネルでデバッグ情報を確認できます。 
+各応答の末尾に表示される Agent debug info パネルでデバッグ情報を確認できます。 
 
 ![agent debugger](../../assets/images/extend-m365-copilot-08/agent-debugger.png)
 
-おめでとうございます! Zava Insurance の MCP サーバーとシームレスに統合された Declarative エージェントを作成・展開できました。「Next」に進み、マルチエージェント オーケストレーションに備えて別の Declarative エージェントを追加しましょう。 
+お疲れさまでした! Zava Insurance の MCP サーバーとシームレスに統合された宣言型エージェントを作成・デプロイできました。「Next」をクリックして、マルチエージェント オーケストレーションに備えて別の宣言型エージェントを追加しましょう。 
 <cc-next />
 
 <img src="https://m365-visitor-stats.azurewebsites.net/copilot-camp/extent/08-mcp-server--ja" />
 
 ### 🔗 追加リソース
 
-- **MCP Protocol ドキュメント**: [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/)
-- **Azure Table Storage**: [Azure ドキュメント](https://docs.microsoft.com/en-us/azure/storage/tables/)
-- **Zava Insurance デモ**: [GitHub リポジトリ](https://github.com/microsoft/Ignite25-BRK319-Demos/src/DA/zava-mcp-server)
+- **MCP Protocol ドキュメント**: [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/)  
+- **Azure Table Storage**: [Azure Documentation](https://docs.microsoft.com/en-us/azure/storage/tables/)  
+- **Zava Insurance デモ**: [GitHub Repository](https://github.com/microsoft/Ignite25-BRK319-Demos/src/DA/zava-mcp-server)
